@@ -8,14 +8,15 @@ Dato is a local-first AI data-leak firewall. It inspects prompts and files **bef
 
 ## Where this repo came from
 
-This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The separate Chrome extension was left out of this repo.
+This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site opens on a page to download it.
 
 ## How to use
 
-1. **Firewall tab:** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). Dato shows what it found and what your policy says to do.
-2. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
-3. **Audit log tab:** filter events, export them as JSON, or clear them.
-4. **Risk dashboard tab:** totals and charts computed from the log.
+1. **Extension tab (opens first):** download `dato-extension.zip` and follow the install steps. The extension checks prompts on ChatGPT, Claude, and Gemini before they send.
+2. **Firewall tab:** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). Dato shows what it found and what your policy says to do.
+3. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
+4. **Audit log tab:** filter events, export them as JSON, or clear them.
+5. **Risk dashboard tab:** totals and charts computed from the log.
 
 Empty or invalid input (nothing to inspect, file over 2 MB, unreadable file) shows a message in the page. Nothing uses pop-up dialogs.
 
@@ -60,11 +61,13 @@ Or just open `index.html` in a browser.
 
 | File | Role |
 | --- | --- |
-| `index.html` | App shell: Firewall console, Policies, Audit log, Risk dashboard, Assessment |
+| `index.html` | App shell: Extension download, Firewall console, Policies, Audit log, Risk dashboard, Assessment |
 | `detectors.js` | Pure detection engine (patterns + heuristics + redaction). Runs in browser or Node (`module.exports`). |
 | `app.js` | Console UI, policy state, local audit log, dashboard |
 | `assessment.js` | Synthetic assessment module |
 | `styles.css` | Brand and component system |
+| `extension/` | Chrome extension (Manifest V3) for ChatGPT, Claude, and Gemini |
+| `dato-extension.zip` | Zipped copy of `extension/` for the download button |
 
 State lives in `app.js`: `policies` (object, class to action), `events` (audit log array) and `attachedFiles`. Policies and events are saved to `localStorage`; clearing site data or pressing Reset everything wipes them. Planning docs: [PROPOSAL.md](PROPOSAL.md), [PRD.md](PRD.md), [DESIGN.md](DESIGN.md), [AGENTS.md](AGENTS.md).
 
