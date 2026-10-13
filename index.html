@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dato — AI Data-Leak Firewall</title>
+<meta name="description" content="Dato inspects prompts and files locally and stops confidential data before it reaches AI tools. Defensive, local-first, audit-ready.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23070b14'/><path d='M50 18l26 10v20c0 18-11 30-26 34-15-4-26-16-26-34V28z' fill='none' stroke='%232de2c5' stroke-width='7'/><circle cx='50' cy='46' r='7' fill='%232de2c5'/><path d='M50 53v14' stroke='%232de2c5' stroke-width='7' stroke-linecap='round'/></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="bg-grid" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
+      <rect width="100" height="100" rx="22" fill="#0c1220"/>
+      <path d="M50 18l26 10v20c0 18-11 30-26 34-15-4-26-16-26-34V28z" fill="none" stroke="#2de2c5" stroke-width="7"/>
+      <circle cx="50" cy="46" r="7" fill="#2de2c5"/>
+      <path d="M50 53v14" stroke="#2de2c5" stroke-width="7" stroke-linecap="round"/>
+    </svg>
+    <div>
+      <div class="brand-name">Dato</div>
+      <div class="brand-tag">AI data-leak firewall</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
+    <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
+    <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
+    <a href="#dashboard" id="nav-dashboard" class="nav-link">Risk dashboard</a>
+    <a href="#assessment" id="nav-assessment" class="nav-link nav-cta">Assessment</a>
+  </nav>
+</header>
+
+<div class="safety-strip">
+  <span class="pulse-dot"></span>
+  Defensive security tool — every scan runs locally in your browser. No prompt, file, or event is transmitted. Assessment mode uses synthetic data only.
+</div>
+
+<main class="main">
+
+  <!-- FIREWALL -->
+  <section id="view-firewall" class="view active">
+    <div class="view-head">
+      <h1>Inspect it before the model sees it.</h1>
+      <p class="lede">Paste a prompt or attach files. Dato detects secrets, PII, financials, source code, and contract language on-device — then warns, redacts, or blocks according to your policy.</p>
+    </div>
+    <div class="console-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">Prompt &amp; files</span>
+          <label class="btn btn-ghost">
+            Attach files
+            <input type="file" id="file-input" multiple hidden
+              accept=".txt,.md,.markdown,.csv,.json,.js,.ts,.py,.java,.go,.rb,.sh,.yaml,.yml,.xml,.html,.css,.sql,.log,.env,.ini,.cfg,.conf">
+          </label>
+        </div>
+        <label for="prompt-input" class="sr-only">Prompt to inspect</label>
+        <textarea id="prompt-input" class="prompt-input" spellcheck="false" aria-describedby="form-error"
+          placeholder="Paste the prompt an employee is about to send to ChatGPT, Claude, or any AI tool…"></textarea>
+        <p id="form-error" class="form-error" role="alert" hidden></p>
+        <div id="attachments" class="attachments"></div>
+        <div class="console-actions">
+          <button id="scan-btn" class="btn btn-primary" title="Shortcut: Ctrl/Cmd + Enter">Inspect locally</button>
+          <button id="send-btn" class="btn btn-secondary">Send to AI (simulated)</button>
+          <button id="clear-btn" class="btn btn-ghost">Clear</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Inspection result</span><span class="local-badge">on-device</span></div>
+        <div id="scan-result" class="scan-result" aria-live="polite">
+          <div class="empty-state">Paste a prompt or attach a file to inspect it before it reaches an AI tool.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POLICIES -->
+  <section id="view-policies" class="view">
+    <div class="view-head">
+      <h1>Policy controls</h1>
+      <p class="lede">Decide what happens per data class. <b>Warn</b> educates in the moment, <b>Redact</b> strips the data and keeps the workflow, <b>Block</b> stops the send entirely.</p>
+    </div>
+    <div class="panel"><div id="policy-list"></div></div>
+    <div class="reset-row">
+      <button id="reset-all" class="btn btn-ghost danger">Reset everything</button>
+      <span class="reset-note">Restores default policies, clears the audit log and the prompt box.</span>
+    </div>
+  </section>
+
+  <!-- ACTIVITY -->
+  <section id="view-activity" class="view">
+    <div class="view-head">
+      <h1>Audit log</h1>
+      <p class="lede">Every inspection and policy decision, stored locally for security review. Export it for your SIEM or compliance evidence.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <span class="panel-title">Events</span>
+        <span class="toolbar">
+          <select id="activity-filter" class="select">
+            <option value="all">All actions</option>
+            <option value="block">Blocked</option>
+            <option value="warn">Warned</option>
+            <option value="redact">Redacted</option>
+            <option value="allowed-clean">Clean</option>
+          </select>
+          <button id="export-log" class="btn btn-ghost">Export JSON</button>
+          <button id="clear-log" class="btn btn-ghost danger">Clear</button>
+        </span>
+      </div>
+      <div id="activity-list"></div>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="view">
+    <div class="view-head">
+      <h1>Risk dashboard</h1>
+      <p class="lede">What your AI usage would have leaked, and what your policies stopped.</p>
+    </div>
+    <p id="dash-empty" class="empty-state dash-empty" hidden>No data yet. Inspect a prompt on the Firewall tab and this dashboard fills in.</p>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num" id="stat-scans">0</div><div class="stat-label">Inspections</div></div>
+      <div class="stat-card"><div class="stat-num" id="stat-findings">0</div><div class="stat-label">Findings caught</div></div>
+      <div class="stat-card stat-block"><div class="stat-num" id="stat-blocked">0</div><div class="stat-label">Blocked sends</div></div>
+      <div class="stat-card stat-redact"><div class="stat-num" id="stat-redacted">0</div><div class="stat-label">Redactions</div></div>
+    </div>
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Findings by data class</span></div>
+        <div id="cat-bars" class="bars"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Policy outcomes</span></div>
+        <div class="donut-wrap">
+          <div id="action-donut" class="donut"></div>
+          <div id="donut-legend" class="legend"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Last 7 days</span></div>
+        <div id="week-bars" class="week-bars"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Current posture</span></div>
+        <div id="posture-line" class="posture"></div>
+        <p class="posture-note">Adjust per-class enforcement in <a href="#policies" id="goto-policies">Policies</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ASSESSMENT -->
+  <section id="view-assessment" class="view">
+    <div class="view-head">
+      <h1>Prove the risk — safely.</h1>
+      <p class="lede">A guided, authorized simulation with fabricated data. Show any company what employees leak into AI tools, without touching anything real.</p>
+    </div>
+    <div class="progress"><div id="assess-progress-fill" class="progress-fill"></div></div>
+    <div id="assessment-stage"></div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>Dato · local-first AI data-leak protection</span>
+  <span class="footer-note">Demo build — defensive use only. Detection runs entirely in the browser.</span>
+</footer>
+
+<script src="detectors.js"></script>
+<script src="app.js"></script>
+<script src="assessment.js"></script>
+</body>
+</html>
