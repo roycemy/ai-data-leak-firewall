@@ -25,7 +25,8 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
+    <a href="#install" id="nav-install" class="nav-link active">Extension</a>
+    <a href="#firewall" id="nav-firewall" class="nav-link">Firewall</a>
     <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
     <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
     <a href="#dashboard" id="nav-dashboard" class="nav-link">Risk dashboard</a>
@@ -41,7 +42,7 @@
 <main class="main">
 
   <!-- FIREWALL -->
-  <section id="view-firewall" class="view active">
+  <section id="view-firewall" class="view">
     <div class="view-head">
       <h1>Inspect it before the model sees it.</h1>
       <p class="lede">Paste a prompt or attach files. Dato detects secrets, PII, financials, source code, and contract language on-device — then warns, redacts, or blocks according to your policy.</p>
@@ -147,6 +148,37 @@
         <div class="panel-head"><span class="panel-title">Current posture</span></div>
         <div id="posture-line" class="posture"></div>
         <p class="posture-note">Adjust per-class enforcement in <a href="#policies" id="goto-policies">Policies</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="view-install" class="view active">
+    <div class="view-head">
+      <h1>Put Dato in front of every AI tool.</h1>
+      <p class="lede">The Chrome extension runs the same checks right inside ChatGPT, Claude, and Gemini, and stops the prompt before it sends. Everything stays on the computer. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
+    </div>
+    <div class="console-grid">
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Install in Chrome</span><span class="local-badge">free · local only</span></div>
+        <p><a class="btn btn-primary" href="dato-extension.zip" download>Download Dato for Chrome</a></p>
+        <ol class="install-steps">
+          <li>Unzip <code>dato-extension.zip</code>. You get a folder called <code>extension</code>.</li>
+          <li>In Chrome, go to <code>chrome://extensions</code>.</li>
+          <li>Turn on <b>Developer mode</b> in the top-right corner.</li>
+          <li>Click <b>Load unpacked</b> and choose the <code>extension</code> folder.</li>
+          <li>Pin Dato from the Extensions menu, then open ChatGPT, Claude, or Gemini and look for <b>Dato · Protected locally</b>.</li>
+        </ol>
+        <p class="posture-note">Keep the folder on your computer. Chrome runs Dato from it.</p>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><span class="panel-title">Quick test</span></div>
+        <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. Dato should stop it before it sends.</p>
+        <pre class="install-sample">Summarize this fake deployment note:
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
+Customer email: dana@example.com
+Test card: 4111 1111 1111 1111</pre>
+        <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies in Chrome. It does not send anything to this dashboard.</p>
       </div>
     </div>
   </section>

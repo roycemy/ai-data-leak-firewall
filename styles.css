@@ -243,7 +243,7 @@ body {
 .posture { display: flex; flex-wrap: wrap; gap: 7px; }
 .posture .policy-tag { margin-left: 0; }
 .posture-note { color: var(--muted); font-size: 13px; margin-top: 14px; }
-.posture-note a { color: var(--teal); }
+.posture-note a, .lede a { color: var(--teal); }
 
 /* Assessment */
 .progress { height: 5px; background: var(--panel-2); border-radius: 4px; overflow: hidden; margin-bottom: 20px; }
@@ -313,4 +313,14 @@ body {
   .seg-btn { flex: 1; padding: 10px 6px; }
   .console-actions { flex-wrap: wrap; }
   .panel { padding: 16px; }
+}
+
+/* Install tab */
+a.btn { display: inline-block; text-decoration: none; }
+.install-steps { color: var(--muted); font-size: 14px; line-height: 1.7; padding-left: 20px; margin: 18px 0 0; }
+.install-steps b, .install-steps code { color: var(--text); }
+.install-sample {
+  background: var(--bg); color: var(--text); border: 1px solid var(--line); border-radius: 12px;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.6; padding: 14px;
+  white-space: pre-wrap; word-break: break-all; margin: 12px 0;
 }

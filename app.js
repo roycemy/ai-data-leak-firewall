@@ -31,7 +31,7 @@
   }
 
   // ---------- Navigation ----------
-  var views = ['firewall', 'policies', 'activity', 'dashboard', 'assessment'];
+  var views = ['install', 'firewall', 'policies', 'activity', 'dashboard', 'assessment'];
   function showView(name) {
     views.forEach(function (v) {
       document.getElementById('view-' + v).classList.toggle('active', v === name);
@@ -404,13 +404,16 @@
     return '<span class="legend-item"><span class="legend-dot" style="background:' + color + '"></span>' + label + ' <b>' + n + '</b></span>';
   }
 
+  var firewallLink = document.getElementById('goto-firewall');
+  firewallLink.addEventListener('click', function (e) { e.preventDefault(); showView('firewall'); });
+
   var policiesLink = document.getElementById('goto-policies');
   policiesLink.addEventListener('click', function (e) { e.preventDefault(); showView('policies'); });
 
   // ---------- Boot ----------
   renderPolicies();
-  var initial = (location.hash || '#firewall').slice(1);
-  showView(views.indexOf(initial) !== -1 ? initial : 'firewall');
+  var initial = (location.hash || '#install').slice(1);
+  showView(views.indexOf(initial) !== -1 ? initial : 'install');
 
   // Expose a small API for the assessment module
   window.DatoApp = {
