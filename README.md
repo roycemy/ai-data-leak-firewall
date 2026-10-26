@@ -22,11 +22,15 @@ Empty or invalid input (nothing to inspect, file over 2 MB, unreadable file) sho
 
 ## Where the agent differed from what I expected
 
-> TODO (write one line in your own words once you have checked the finished tool against PROPOSAL.md).
+I pictured this as just an extension, so I did not put certain things in the proposal. Then I realized the value for business owners of having an actual dashboard connected to the extension. The agent built the website console, an Extension tab to download the extension, and an owner dashboard page at `extension/executive-dashboard.html`. That dashboard uses hardcoded demo data, and the extension does not send it any events yet, so it is a mock-up and not a working connection.
 
 ## Required question: AI output I did not accept as-is
 
-> TODO: pick one specific commit (hash), say what the agent gave you, what you changed, and how you knew it needed changing. If the output was fine first time, say how you verified it.
+I think I accepted the agent's output as-is, so I checked one commit: **86e3ffa** ("Add detection and redaction engine"), which added `detectors.js`. To verify it, I ran `scan` from `detectors.js` in Node on a test string with a fake AWS key, an SSN, a Luhn-valid test card number and an email. It found all four and masked each value. A harmless sentence ("hello, lunch at noon?") returned no findings. I ran this check on 2026-10-26 with the agent's help. It only covers those four patterns, so I did not test the code, contract or financial detectors.
+
+## About PROPOSAL.md
+
+PROPOSAL.md was rewritten in my words after the code was written. The original draft is in commit 6cb1ee6. Because it was written after the code, it describes what is built, including what is still a mock-up (the owner dashboard) and what I do not know yet.
 
 ## Why
 
