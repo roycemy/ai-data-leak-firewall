@@ -1,77 +1,463 @@
-(function(){
-'use strict';
-if(window.top!==window||window.__datoLoaded)return;window.__datoLoaded=true;
-var D=window.DatoDetect;
-var defaults={secrets:'block',pii:'warn',financial:'warn',source:'warn',contract:'warn',sensitive:'warn'};
-var policies=Object.assign({},defaults);
-var rank={allow:0,warn:1,redact:2,block:3};
-var bypassUntil=0,bypassText='';
-chrome.storage.local.get(defaults,function(x){policies=Object.assign({},defaults,x)});
-chrome.storage.onChanged.addListener(function(changes,area){if(area!=='local')return;Object.keys(defaults).forEach(function(k){if(changes[k])policies[k]=changes[k].newValue})});
+/* Dato content script: holds a prompt on a supported AI chat until it passes policy.
+ *
+ * State (all in this closure, never written to the page or storage):
+ *   policies, settings  - copies of chrome.storage.local, kept live by onChanged
+ *   approval            - { text, until }: the exact text the user approved and a short expiry
+ *   review              - the open review dialog: { editor, text, decision, trigger, el }
+ *   health              - { state, code, detail } reported to the popup and dashboard
+ *
+ * Browser interception is best-effort. A page, another extension or the user
+ * can get around it. It is a guard rail, not a security boundary.
+ */
+(function () {
+  'use strict';
+  if (window.top !== window || window.__datoLoaded) return;
+  window.__datoLoaded = true;
 
-var HOST_SELECTORS={
- 'chatgpt.com':['#prompt-textarea','textarea#mobile-composer-prompt','textarea[data-id="root"]','div[contenteditable="true"][data-virtualkeyboard="true"]','div[contenteditable="true"].ProseMirror','form textarea'],
- 'claude.ai':['div[contenteditable="true"].ProseMirror','fieldset div[contenteditable="true"]','div[contenteditable="true"]','textarea'],
- 'gemini.google.com':['div[contenteditable="true"].ql-editor','rich-textarea div[contenteditable="true"]','rich-textarea textarea','textarea']
-};
-var EDITABLE_SEL='textarea,[contenteditable="true"],input[type="text"]';
-var SEND_SELECTORS=['button[data-testid="send-button"]','button[data-testid*="send" i]','button[aria-label*="send" i]','form button[type="submit"]'];
+  var Detect = window.DatoDetect, Policy = window.DatoPolicy, Sites = window.DatoAdapters;
+  var adapter = Sites.forHost(location.hostname);
+  if (!adapter) return;
 
-function visible(e){var r=e.getBoundingClientRect();return r.width>20&&r.height>10&&r.bottom>0&&r.top<(window.innerHeight||800)}
-function editables(){var out=[];var nodes=document.querySelectorAll(EDITABLE_SEL);for(var i=0;i<nodes.length;i++){if(visible(nodes[i]))out.push(nodes[i])}return out}
-function editor(){
- var pref=HOST_SELECTORS[location.hostname]||[];
- for(var i=0;i<pref.length;i++){var e=document.querySelector(pref[i]);if(e&&visible(e))return e}
- // Generic fallback: the visible editable closest to the bottom of the viewport - prompt composers sit at the bottom.
- var all=editables(),best=null,bestBottom=-1;
- for(var j=0;j<all.length;j++){var r=all[j].getBoundingClientRect();if(r.bottom>bestBottom){bestBottom=r.bottom;best=all[j]}}
- return best;
-}
-function isComposer(el){
- if(!el||!el.matches)return false;
- var ed=editor();
- if(ed&&(ed===el||ed.contains(el)))return true;
- return el.matches(EDITABLE_SEL)&&visible(el);
-}
-function matchesAny(el,sels){for(var i=0;i<sels.length;i++){try{if(el.matches(sels[i]))return true}catch(e){}}return false}
-function isSendButton(b){return b&&!b.disabled&&visible(b)&&matchesAny(b,SEND_SELECTORS)}
-function sendButtons(){var out=[];var nodes=document.querySelectorAll(SEND_SELECTORS.join(','));for(var i=0;i<nodes.length;i++){if(!nodes[i].disabled&&visible(nodes[i]))out.push(nodes[i])}return out}
-function pickSendButton(ed){
- var btns=sendButtons();if(!btns.length)return null;
- var form=ed&&ed.closest?ed.closest('form'):null;
- for(var i=0;i<btns.length;i++){if(form&&form.contains(btns[i]))return btns[i]}
- if(ed){var er=ed.getBoundingClientRect(),best=null,bestDist=Infinity;
-  for(var j=0;j<btns.length;j++){var br=btns[j].getBoundingClientRect();var d=Math.abs(br.top-er.top)+Math.abs(br.left-er.right);if(d<bestDist){bestDist=d;best=btns[j]}}
-  return best}
- return btns[0];
-}
-function textOf(e){return e?(e.tagName==='TEXTAREA'||e.tagName==='INPUT'?e.value:(e.innerText||e.textContent||'')):''}
-function setText(e,text){e.focus();if(e.tagName==='TEXTAREA'||e.tagName==='INPUT'){var setter=Object.getOwnPropertyDescriptor(e.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set;setter.call(e,text);e.dispatchEvent(new Event('input',{bubbles:true}));e.dispatchEvent(new Event('change',{bubbles:true}))}else{e.textContent=text;e.dispatchEvent(new InputEvent('input',{bubbles:true,inputType:'insertText',data:text}))}}
-function actionFor(findings){var a='allow';findings.forEach(function(f){var p=policies[f.category]||'warn';if(f.tentative&&rank[p]>rank.warn)p='warn';if(rank[p]>rank[a])a=p});return a}
-function attempt(e){var ed=editor();if(!ed)return;var text=textOf(ed).trim();if(!text)return;if(Date.now()<bypassUntil&&text===bypassText)return;var findings=D.scan(text).findings;if(!findings.length)return;var action=actionFor(findings);if(action==='allow')return;e.preventDefault();e.stopImmediatePropagation();show(action,findings,text,ed)}
+  var policies = Object.assign({}, Policy.DEFAULT_POLICIES);
+  var settings = Object.assign({}, Policy.DEFAULT_SETTINGS);
+  var approval = null;
+  var review = null;
+  var health = { state: 'checking', code: 'starting', detail: 'Starting checks.' };
+  var listenersVerified = false;
+  var storageFailed = false;
+  var APPROVAL_MS = 3000;
 
-// Send-button clicks (icon clicks land inside the button, so walk up).
-document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('button'):null;if(b&&isSendButton(b))attempt(e)},true);
-// Enter-to-send. window capture runs before the page's own handlers.
-window.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&isComposer(e.target))attempt(e)},true);
-// Safety nets: newline insertion and any real form submit from the composer.
-window.addEventListener('beforeinput',function(e){if(e.inputType==='insertParagraph'&&isComposer(e.target))attempt(e)},true);
-document.addEventListener('submit',function(e){var ed=editor();if(ed&&e.target&&e.target.contains&&e.target.contains(ed))attempt(e)},true);
+  var CATEGORY_NAMES = { secrets: 'Secrets & credentials', pii: 'Personal data', financial: 'Financial data', source: 'Source code', contract: 'Contracts & legal', sensitive: 'Sensitive context' };
+  var CATEGORY_WHY = {
+    secrets: 'Anyone who sees a credential can use it to act as you or your company.',
+    pii: 'Personal data about a real person.',
+    financial: 'Bank details or non-public company figures.',
+    source: 'Reads like proprietary source code.',
+    contract: 'Reads like contract or legal language.',
+    sensitive: 'Marked confidential, internal or restricted.'
+  };
 
-function resume(ed,text){bypassText=text;bypassUntil=Date.now()+1600;var b=pickSendButton(ed);if(b){b.click();return}ed.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',code:'Enter',bubbles:true,cancelable:true}))}
-function show(action,findings,text,ed){close();var wrap=document.createElement('div');wrap.className='dato-backdrop';wrap.id='dato-modal';var labels={block:['Blocked by policy','Remove the flagged data before sending. If you meant to share it, use Send anyway.'],warn:['Confidential data detected','Review the findings before choosing to send.'],redact:['Redaction required','Dato can replace the detected values before sending.']};var rows=findings.slice(0,6).map(function(f){return '<div class="dato-finding"><b>'+esc(f.label)+'</b><code>'+esc(f.masked)+'</code></div>'}).join('');var more=findings.length>6?'<div class="dato-more">+'+(findings.length-6)+' more finding'+(findings.length-6===1?'':'s')+'</div>':'';var buttons='<button class="dato-btn" data-dato="cancel">Go back</button>';
- if(action==='warn'||action==='block')buttons+='<button class="dato-btn dato-btn-danger" data-dato="send">Send anyway</button>';
- if(action==='redact')buttons+='<button class="dato-btn dato-btn-primary" data-dato="redact">Redact &amp; send</button>';
- wrap.innerHTML='<div class="dato-dialog dato-'+action+'" role="dialog" aria-modal="true" aria-labelledby="dato-title"><div class="dato-head"><div class="dato-logo">D</div><div><strong id="dato-title">Dato stopped this prompt</strong><span>Local AI data-leak firewall</span></div></div><div class="dato-verdict"><b>'+labels[action][0]+'</b><div>'+labels[action][1]+'</div></div><div class="dato-findings">'+rows+more+'</div><div class="dato-local">Scanned on this device. Prompt content was not stored or transmitted by Dato.</div><div class="dato-actions">'+buttons+'</div></div>';
- document.body.appendChild(wrap);sentinel('alert',findings.length+' finding'+(findings.length===1?'':'s'));
- wrap.querySelector('[data-dato="cancel"]').addEventListener('click',close);
- var send=wrap.querySelector('[data-dato="send"]');if(send)send.addEventListener('click',function(){if(action==='block'&&!send.dataset.armed){send.dataset.armed='1';send.textContent='Really send flagged data? Click again';setTimeout(function(){if(send.isConnected){delete send.dataset.armed;send.textContent='Send anyway'}},5000);return}close();resume(ed,text)});
- var redact=wrap.querySelector('[data-dato="redact"]');if(redact)redact.addEventListener('click',function(){var safe=D.redact(text,findings);setText(ed,safe);close();setTimeout(function(){resume(ed,safe)},80)});
- wrap.addEventListener('click',function(x){if(x.target===wrap)close()});document.addEventListener('keydown',escapeOnce,true)
-}
-function escapeOnce(e){if(e.key==='Escape')close()}
-function close(){var m=document.getElementById('dato-modal');if(m)m.remove();document.removeEventListener('keydown',escapeOnce,true);sentinel('', 'Protected locally')}
-function sentinel(state,label){var s=document.getElementById('dato-sentinel');if(!s){s=document.createElement('div');s.id='dato-sentinel';s.innerHTML='<i></i><span></span>';document.documentElement.appendChild(s)}s.className=state==='alert'?'dato-alert':'';s.querySelector('span').textContent='Dato · '+label}
-function esc(v){var d=document.createElement('div');d.textContent=v;return d.innerHTML}
-sentinel('','Protected locally');
+  /* ---------- extension plumbing ---------- */
+
+  function runtimeAlive() { try { return !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; } }
+
+  function send(message) {
+    if (!runtimeAlive()) { assessHealth(); return; }
+    try { chrome.runtime.sendMessage(message, function () { void chrome.runtime.lastError; }); } catch (e) { assessHealth(); }
+  }
+
+  // Reads storage; changes policies, settings, storageFailed.
+  function loadPolicies(then) {
+    try {
+      chrome.storage.local.get(null, function (all) {
+        if (chrome.runtime.lastError || !all) { storageFailed = true; assessHealth(); return; }
+        storageFailed = false;
+        policies = Policy.cleanPolicies(all);
+        settings = Policy.cleanSettings(all.dato_settings);
+        if (then) then();
+      });
+    } catch (e) { storageFailed = true; }
+  }
+
+  // Changes policies/settings when the popup or dashboard edits them.
+  function watchPolicies() {
+    chrome.storage.onChanged.addListener(function (changes, area) {
+      if (area !== 'local') return;
+      var touched = false;
+      Policy.CATEGORY_KEYS.forEach(function (k) { if (changes[k]) touched = true; });
+      if (touched || changes.dato_settings) {
+        loadPolicies(function () { refreshReview('Your policy changed while this was open. This review uses the new policy.'); });
+      }
+    });
+  }
+
+  /* ---------- decisions and approvals ---------- */
+
+  function evaluate(text) {
+    return Policy.decide(Detect.scan(text).findings, policies, settings);
+  }
+
+  // Reads approval. Approval only covers the exact text that was reviewed.
+  function approvalCovers(text) {
+    if (!approval) return false;
+    if (Date.now() > approval.until || approval.text !== text) { approval = null; return false; }
+    return true;
+  }
+
+  // Changes approval.
+  function approve(text) { approval = { text: text, until: Date.now() + APPROVAL_MS }; }
+
+  // Any edit, or the site clearing the box after sending, ends the approval. Changes approval.
+  function dropStaleApproval() {
+    if (!approval) return;
+    var found = Sites.findEditor(adapter, document);
+    if (!found || Sites.readText(found.el) !== approval.text) approval = null;
+  }
+
+  function record(outcome, decision, trigger) {
+    var event = Policy.summarize(decision);
+    event.outcome = outcome;
+    event.adapter = adapter.id;
+    event.trigger = trigger || 'unknown';
+    send({ type: 'dato:event', event: event });
+  }
+
+  function stopEvent(e) { e.preventDefault(); e.stopImmediatePropagation(); }
+
+  /* guard: the single checkpoint every send path goes through.
+   * Reads approval, review, policies. May open a review. */
+  function guard(e, editor, trigger) {
+    if (review) { stopEvent(e); focusReview(); return; }
+    if (!editor) return;
+    var text = Sites.readText(editor);
+    if (!Sites.normalize(text)) return;
+    if (approvalCovers(text)) return;
+    var decision;
+    try { decision = evaluate(text); }
+    catch (err) { decision = { action: 'block', items: [], strict: settings.strict, canRedact: false, overrideAllowed: !settings.strict, failed: true }; }
+    if (decision.action === 'allow') {
+      if (decision.items.length) record('allowed', decision, trigger);
+      return;
+    }
+    stopEvent(e);
+    openReview({ editor: editor, text: text, decision: decision, trigger: trigger });
+  }
+
+  /* ---------- send paths ---------- */
+
+  function editorFor(target) {
+    var own = Sites.editorFromTarget(adapter, target);
+    if (own) return own;
+    var found = Sites.findEditor(adapter, document);
+    return found ? found.el : null;
+  }
+
+  function onKeydown(e) {
+    if (e.type === 'dato-probe') { listenersVerified = true; return; }
+    if (e.key !== 'Enter' || e.shiftKey || e.altKey) return;
+    if (e.isComposing || e.keyCode === 229) return; // IME: Enter confirms a composition, it does not send.
+    var editor = Sites.editorFromTarget(adapter, e.target);
+    if (!editor) return;
+    guard(e, editor, 'enter');
+  }
+
+  function onClick(e) {
+    var btn = Sites.isSendControl(adapter, e.target);
+    if (!btn || btn.disabled) return;
+    var found = Sites.findEditor(adapter, document);
+    guard(e, found ? found.el : null, 'click');
+  }
+
+  function onSubmit(e) {
+    var form = e.target;
+    var found = Sites.findEditor(adapter, document);
+    if (!found || !form.contains || !form.contains(found.el)) return;
+    guard(e, found.el, 'submit');
+  }
+
+  // Capture on window at document_start, so these run before the page's own handlers.
+  window.addEventListener('keydown', onKeydown, true);
+  window.addEventListener('dato-probe', onKeydown, true);
+  window.addEventListener('click', onClick, true);
+  window.addEventListener('submit', onSubmit, true);
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function enabled(btn) { return btn && !btn.disabled && btn.getAttribute('aria-disabled') !== 'true'; }
+
+  /* Re-issue the send after approval. Sites often enable their send button a
+   * moment after the text changes, so wait briefly for it. */
+  async function resume(editor) {
+    var started = Date.now();
+    while (Date.now() - started < 1500) {
+      var s = Sites.findSend(adapter, editor);
+      if (s && enabled(s.el)) { s.el.click(); return 'click'; }
+      await sleep(50);
+    }
+    var form = editor.closest && editor.closest('form');
+    if (form && form.requestSubmit) { form.requestSubmit(); return 'submit'; }
+    editor.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, bubbles: true, cancelable: true }));
+    return 'enter';
+  }
+
+  /* ---------- review dialog ---------- */
+
+  function h(tag, attrs, children) {
+    var el = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) {
+      if (k === 'text') el.textContent = attrs[k];
+      else if (k === 'class') el.className = attrs[k];
+      else el.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { if (c) el.appendChild(c); });
+    return el;
+  }
+
+  function verdictCopy(d) {
+    var strictLine = d.strict ? ' Strict mode is on, so this review has no send-anyway option.' : '';
+    if (d.failed) return ['Dato could not check this prompt', 'Something went wrong while scanning, so Dato is holding the prompt instead of guessing.' + strictLine];
+    if (d.action === 'block') return ['Blocked by your policy', 'This prompt contains data your policy does not allow to leave this browser. Edit it' + (d.canRedact ? ' or redact it' : '') + ' before sending.' + strictLine];
+    if (d.action === 'redact') return ['Redaction required', 'Your policy only sends this after the flagged values are replaced. Check the preview below.'];
+    return ['Check this before it sends', 'Dato found data that may be confidential.' + (d.strict ? ' Strict mode is on, so edit or redact it to continue.' : ' You can still send it if you meant to.')];
+  }
+
+  var LABEL = { allow: 'Allowed', warn: 'Warn', redact: 'Redact', block: 'Block' };
+
+  function findingRow(item) {
+    var f = item.finding;
+    var meta = CATEGORY_NAMES[f.category] + ' · ' + CATEGORY_WHY[f.category];
+    return h('li', { class: 'dato-finding' }, [
+      h('span', { class: 'dato-pill dato-pill-' + item.effective, text: LABEL[item.effective] }),
+      h('div', { class: 'dato-finding-copy' }, [
+        h('b', { text: f.label + (f.tentative ? ' (possible match)' : '') }),
+        h('span', { text: meta }),
+        item.note ? h('small', { text: item.note }) : null
+      ]),
+      f.length > 0 ? h('code', { text: f.masked, title: 'Masked: the full value is not shown or stored' }) : h('code', { text: 'whole prompt' })
+    ]);
+  }
+
+  function previewBlock(text, decision) {
+    var redacted = Policy.redactText(text, decision);
+    var shown = redacted.length > 1500 ? redacted.slice(0, 1500) + '\n…' : redacted;
+    var pre = h('pre', { class: 'dato-preview', tabindex: '0', 'aria-label': 'Redacted prompt preview' });
+    shown.split(/(\[REDACTED: [^\]]+\])/).forEach(function (part, i) {
+      pre.appendChild(i % 2 ? h('mark', { text: part }) : document.createTextNode(part));
+    });
+    return h('div', { class: 'dato-preview-wrap' }, [h('h3', { text: 'What Redact and send will submit' }), pre]);
+  }
+
+  function renderReview(message) {
+    var d = review.decision, copy = verdictCopy(d);
+    var shown = d.items.filter(function (it) { return it.effective !== 'allow'; });
+    var list = h('ul', { class: 'dato-findings', 'aria-label': 'Findings' }, shown.slice(0, 8).map(findingRow));
+    var more = shown.length > 8 ? h('p', { class: 'dato-more', text: '+' + (shown.length - 8) + ' more' }) : null;
+    var buttons = [h('button', { type: 'button', class: 'dato-btn', 'data-dato': 'cancel', text: 'Go back and edit' })];
+    if (d.overrideAllowed) buttons.push(h('button', { type: 'button', class: 'dato-btn dato-btn-danger', 'data-dato': 'override', text: 'Send anyway' }));
+    if (d.canRedact) buttons.push(h('button', { type: 'button', class: 'dato-btn dato-btn-primary', 'data-dato': 'redact', text: 'Redact and send' }));
+    var dialog = h('section', { class: 'dato-dialog dato-' + d.action, role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'dato-title', 'aria-describedby': 'dato-verdict-text' }, [
+      h('header', { class: 'dato-head' }, [
+        h('div', { class: 'dato-logo', 'aria-hidden': 'true', text: 'D' }),
+        h('div', {}, [h('h2', { id: 'dato-title', text: 'Dato is holding this prompt' }), h('span', { text: adapter.name + ' · checked on this device' })])
+      ]),
+      h('div', { class: 'dato-verdict' }, [h('b', { text: copy[0] }), h('p', { id: 'dato-verdict-text', text: copy[1] })]),
+      list, more,
+      d.canRedact ? previewBlock(review.text, d) : null,
+      h('p', { class: 'dato-msg', role: 'status', 'aria-live': 'polite', text: message || '' }),
+      h('p', { class: 'dato-local', text: 'Dato logs counts of what it found, never your prompt. Browser checks are best-effort: they can miss data and can be bypassed.' }),
+      h('div', { class: 'dato-actions' }, buttons)
+    ]);
+    var backdrop = h('div', { class: 'dato-backdrop', id: 'dato-modal' }, [dialog]);
+    if (review.el) review.el.replaceWith(backdrop); else document.documentElement.appendChild(backdrop);
+    review.el = backdrop;
+    backdrop.addEventListener('click', onReviewClick);
+    backdrop.addEventListener('keydown', onReviewKey);
+    focusReview();
+  }
+
+  function focusReview() {
+    if (!review || !review.el) return;
+    var primary = review.el.querySelector('[data-dato="redact"]') || review.el.querySelector('[data-dato="cancel"]');
+    if (primary) primary.focus();
+  }
+
+  // Changes review.
+  function openReview(r) {
+    review = r;
+    renderReview('');
+    setSentinel('alert', 'Holding a prompt for review');
+  }
+
+  // Changes review.
+  function closeReview(refocus) {
+    if (review && review.el) review.el.remove();
+    var editor = review && review.editor;
+    review = null;
+    setSentinel(health.state, null);
+    if (refocus && editor && editor.isConnected) editor.focus();
+  }
+
+  // Re-evaluate the open review (policy changed). Reads policies; changes review.
+  function refreshReview(message) {
+    if (!review) return;
+    review.decision = evaluate(review.text);
+    if (review.decision.action === 'allow') { closeReview(true); flash('Policy now allows this prompt. Press send again.'); return; }
+    renderReview(message);
+  }
+
+  function setMessage(text) { var m = review && review.el.querySelector('.dato-msg'); if (m) m.textContent = text; }
+
+  function onReviewKey(e) {
+    if (e.key === 'Escape') { stopEvent(e); cancel(); return; }
+    if (e.key !== 'Tab') return;
+    var items = review.el.querySelectorAll('button:not([disabled]), pre[tabindex]');
+    if (!items.length) return;
+    var first = items[0], last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) { stopEvent(e); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { stopEvent(e); first.focus(); }
+  }
+
+  function onReviewClick(e) {
+    if (e.target === review.el) return; // backdrop clicks do nothing; only explicit choices count
+    var btn = e.target.closest('[data-dato]');
+    if (!btn) return;
+    var act = btn.getAttribute('data-dato');
+    if (act === 'cancel') cancel();
+    else if (act === 'override') override(btn);
+    else if (act === 'redact') redactAndSend();
+  }
+
+  function cancel() {
+    record('cancelled', review.decision, review.trigger);
+    closeReview(true);
+  }
+
+  /* The text currently in the editor, if it is still exactly what was reviewed. */
+  function unchanged() {
+    var editor = review.editor;
+    if (!editor.isConnected) {
+      var found = Sites.findEditor(adapter, document);
+      if (!found) return false;
+      editor = review.editor = found.el;
+    }
+    return Sites.readText(editor) === review.text;
+  }
+
+  // The prompt changed under the open review: drop the approval path and re-check.
+  function stale() {
+    record('stale_review', review.decision, review.trigger);
+    var editor = review.editor;
+    var text = Sites.readText(editor);
+    var decision = evaluate(text);
+    closeReview(false);
+    if (!Sites.normalize(text) || decision.action === 'allow') {
+      flash('Prompt changed after review. Nothing was sent. Press send again.');
+      return;
+    }
+    openReview({ editor: editor, text: text, decision: decision, trigger: 'recheck' });
+    setMessage('The prompt changed after you reviewed it, so that review no longer applies. This is the new version. Nothing was sent.');
+  }
+
+  function override(btn) {
+    if (!review.decision.overrideAllowed) return;
+    if (review.decision.action === 'block' && !btn.dataset.armed) {
+      btn.dataset.armed = '1';
+      btn.textContent = 'Click again to send flagged data';
+      setMessage('This sends the prompt exactly as written, including the blocked data.');
+      return;
+    }
+    if (!unchanged()) { stale(); return; }
+    var editor = review.editor, text = review.text;
+    record('override', review.decision, review.trigger);
+    approve(text);
+    closeReview(false);
+    resume(editor);
+  }
+
+  function failRedaction(why) {
+    record('redaction_failed', review.decision, review.trigger);
+    var btn = review.el.querySelector('[data-dato="redact"]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Redaction failed'; }
+    setMessage(why + ' Nothing was sent. Edit the prompt yourself, then send again.');
+  }
+
+  async function redactAndSend() {
+    if (!unchanged()) { stale(); return; }
+    var current = review, editor = review.editor;
+    var btn = review.el.querySelector('[data-dato="redact"]');
+    if (btn) btn.disabled = true;
+    var redacted = Policy.redactText(review.text, review.decision);
+    if (!Policy.redactionHolds(redacted, Detect.scan, policies, settings).ok) { failRedaction('The redacted copy still contains data your policy blocks.'); return; }
+    if (!Sites.writeText(editor, redacted)) { failRedaction('Dato could not replace the text in the editor.'); return; }
+    // Frameworks can revert the editor on their next render, so check again after a moment.
+    await sleep(120);
+    if (review !== current) return;
+    var written = Sites.readText(editor);
+    if (!Policy.redactionHolds(written, Detect.scan, policies, settings).ok) { failRedaction('The editor did not keep the redacted text.'); return; }
+    record('redacted', review.decision, review.trigger);
+    approve(written);
+    closeReview(false);
+    resume(editor);
+  }
+
+  /* ---------- health ---------- */
+
+  // Reads adapter, listenersVerified, storageFailed; changes health.
+  function assessHealth() {
+    var next;
+    var found = runtimeAlive() ? Sites.findEditor(adapter, document) : null;
+    if (!runtimeAlive()) next = ['error', 'orphaned', 'Dato was updated or reloaded. Refresh this tab to restore full protection.'];
+    else if (!listenersVerified) next = ['error', 'listeners', 'Dato could not attach its send checks on this page.'];
+    else if (storageFailed) next = ['degraded', 'storage', 'Could not read your policies, so the default policy is in use.'];
+    else if (!found) next = ['degraded', 'no-editor', 'No prompt box found on this page. If you expected one, ' + adapter.name + ' may have changed its layout.'];
+    else if (found.confidence === 'generic') next = ['degraded', 'fallback-editor', adapter.name + "'s layout no longer matches Dato's adapter. A fallback match is in use and may miss sends."];
+    else if (Sites.normalize(Sites.readText(found.el)) && !Sites.findSend(adapter, found.el)) next = ['degraded', 'no-send-button', 'Send button not recognised. Enter and form submits are still checked.'];
+    else next = ['active', 'ok', 'Checking prompts on ' + adapter.name + ' before they send.'];
+    if (next[0] === health.state && next[1] === health.code) return;
+    health = { state: next[0], code: next[1], detail: next[2] };
+    if (!review) setSentinel(health.state, null);
+    if (runtimeAlive()) send({ type: 'dato:health', health: { adapter: adapter.id, state: health.state, code: health.code, detail: health.detail } });
+  }
+
+  // Throttled, so streaming replies that mutate the page constantly still get checked.
+  var assessTimer = 0;
+  function scheduleAssess() {
+    if (assessTimer) return;
+    assessTimer = setTimeout(function () { assessTimer = 0; assessHealth(); }, 400);
+  }
+
+  function probeListeners() { window.dispatchEvent(new Event('dato-probe')); }
+
+  function watchPage() {
+    new MutationObserver(function () { dropStaleApproval(); scheduleAssess(); })
+      .observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+    window.addEventListener('popstate', scheduleAssess);
+    window.addEventListener('input', function () { dropStaleApproval(); scheduleAssess(); }, true);
+    if (window.navigation) window.navigation.addEventListener('navigatesuccess', scheduleAssess);
+  }
+
+  /* ---------- status badge ---------- */
+
+  var BADGE = { checking: 'Checking…', active: 'Protected', degraded: 'Degraded', error: 'Error' };
+
+  // 'alert' shows only its note; other states show their name.
+  function setSentinel(state, note) {
+    var s = document.getElementById('dato-sentinel');
+    if (!s) {
+      s = h('div', { id: 'dato-sentinel', role: 'status', 'aria-live': 'polite' }, [h('i', { 'aria-hidden': 'true' }), h('span', {})]);
+      document.documentElement.appendChild(s);
+    }
+    s.className = 'dato-' + state;
+    var label = state === 'alert' ? note : BADGE[state] + (note ? ': ' + note : '');
+    s.querySelector('span').textContent = 'Dato · ' + label;
+    s.title = health.detail;
+  }
+
+  // A short note on the badge that clears itself. Changes the badge only.
+  var flashTimer = 0;
+  function flash(note) {
+    setSentinel('alert', note);
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { if (!review) setSentinel(health.state, null); }, 6000);
+  }
+
+  /* ---------- popup status ---------- */
+
+  chrome.runtime.onMessage.addListener(function (msg, sender, reply) {
+    if (!msg || msg.type !== 'dato:status') return;
+    assessHealth();
+    reply({ adapter: adapter.id, name: adapter.name, state: health.state, code: health.code, detail: health.detail });
+  });
+
+  function start() {
+    probeListeners();
+    loadPolicies();
+    watchPolicies();
+    watchPage();
+    setSentinel('checking', null);
+    setTimeout(assessHealth, 300);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, { once: true });
+  else start();
 })();
