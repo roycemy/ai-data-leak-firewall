@@ -1,14 +1,43 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dato</title><link rel="stylesheet" href="popup.css"></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Dato</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
 <body>
-  <header><div class="mark" aria-hidden="true"><span></span></div><div><h1>Dato</h1><p>AI data-leak firewall</p></div><div class="live"><i></i>ON</div></header>
-  <section class="status"><strong id="site-status">Checking this site...</strong><span>Prompts are inspected on this device only.</span></section>
+  <header class="top">
+    <div class="mark" aria-hidden="true">D</div>
+    <div><h1>Dato</h1><p>Checks prompts on this device</p></div>
+  </header>
+
+  <section class="status" id="status" data-state="checking" aria-live="polite">
+    <span class="dot" aria-hidden="true"></span>
+    <div><strong id="status-title">Checking this tab…</strong><span id="status-detail"></span></div>
+  </section>
+
   <main>
-    <div class="eyebrow">POLICY CONTROLS</div>
+    <h2>Policy by data type</h2>
+    <p class="hint">When several types are found, the strictest action wins.</p>
     <div id="policies"></div>
-    <button id="reset" type="button">Reset defaults</button>
-    <a class="managed-link" href="executive-dashboard.html" target="_blank">Open managed-team dashboard ↗</a>
+
+    <div class="strict">
+      <label class="switch">
+        <input type="checkbox" id="strict">
+        <span><strong>Strict mode</strong><small>Removes Send anyway from every review. Anyone using this browser can turn it off here, so it is a guard rail, not a lock.</small></span>
+      </label>
+    </div>
+
+    <div class="row">
+      <button id="reset" type="button">Reset policies</button>
+      <a class="primary" href="dashboard.html" target="_blank">Open activity dashboard</a>
+    </div>
+    <p id="saved" class="saved" role="status" aria-live="polite"></p>
   </main>
-  <footer><span><b></b> No prompt data leaves your browser</span><a href="https://github.com/roycemy/Dato" target="_blank" rel="noreferrer">Dato repo ↗</a></footer>
+
+  <footer>Best-effort browser check. It can miss data and can be bypassed. No prompt text leaves this browser.</footer>
+  <script src="policy.js"></script>
   <script src="popup.js"></script>
-</body></html>
+</body>
+</html>
