@@ -1,0 +1,10 @@
+{
+  "name": "dato",
+  "private": true,
+  "description": "Dev scripts only. The site and extension have no dependencies; neither do the tests.",
+  "scripts": {
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --test \"tests/unit/*.test.js\"",
+    "test:e2e": "node tests/e2e/run.js"
+  }
+}
