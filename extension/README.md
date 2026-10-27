@@ -17,7 +17,7 @@ Chrome will show that Dato can read and change data on the three supported AI si
 Two tiers, both local-only:
 
 - **Exact matches hard-block by default.** Full-length API keys, private key blocks, connection strings, valid card numbers, SSNs, and similar high-confidence patterns stop the prompt immediately.
-- **Anything plausibly confidential warns.** Shortened or partial keys, credentials named in plain language ("my password is ..."), unrecognized high-entropy tokens, personal details like salaries, and confidential/proprietary context markers show a review warning instead of silently passing.
+- **Anything plausibly confidential warns.** Shortened or partial keys, credentials named in plain language ("my password is ..."), unrecognized high-entropy tokens, personal details like salaries, and confidentiality labels (a line starting "Confidential:", the capitals CONFIDENTIAL, "internal use only", "do not distribute", "under NDA") show a review warning instead of silently passing. The everyday words "confidential", "restricted" and "proprietary" inside a normal sentence do not.
 
 Every interception can be overridden intentionally: warnings offer **Send anyway**, and hard blocks offer it too, with a second confirming click so it cannot fire accidentally.
 
@@ -56,6 +56,6 @@ Before anything is flagged it shows zeros and "Nothing flagged yet". **Show demo
 
 - Detection runs in the browser content script. Dato makes no network requests and does not store prompt text.
 - `chrome.storage.local` holds your policy choices and the flag log (`dato_events`). A flag line never contains the prompt, the values Dato found or any excerpt of them; the service worker rebuilds every line from an allowlist before saving it.
-- Detection is best-effort pattern matching, not a certified security control.
+- Detection is best-effort pattern matching, not a certified security control. It will still flag some harmless text on purpose: a street address or a birthday you type about yourself, an invoice number, or a revenue figure it cannot tell is public. Those are warnings you can dismiss with Go back or Send anyway.
 - This release checks typed/pasted prompt text. It does not inspect uploaded files on AI sites.
 - Site interfaces change. If a supported editor changes, Dato may need a selector update.

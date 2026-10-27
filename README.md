@@ -68,6 +68,8 @@ The detector tests use Node's built-in test runner, so there is nothing to insta
 ```bash
 node --test tests/detectors.test.js
 node --test tests/zip.test.js
+node --test tests/store.test.js
+node --test tests/false-flags.test.js
 ```
 
 The second one checks that the download is a real ZIP file.
@@ -99,6 +101,7 @@ The first submission is commit `03cb8bf`. These changes were made afterwards by 
 | `8c786d6` | The site opens on the Firewall tab; the Extension tab moved to the end |
 | `366f6c3` | Keyboard focus rings, skip link, `aria-current` / `aria-pressed`, reduced-motion support |
 | (this fix) | `dato-extension.zip` was really a tar archive with a `.zip` name, so Windows could not extract it. It is now a real ZIP, with a test |
+| (false flags) | Fewer flags on harmless prompts, in both the website and the extension: "billing about" no longer counts as an invoice number, one line of code is no longer "proprietary source", "my password is not working" is no longer a credential, and in the extension the plain word "confidential" is no longer a flag. `tests/false-flags.test.js` covers both |
 | (extension dashboard) | The extension now records each flag (counts and labels only) and has a real flagged-activity dashboard in place of the mock-up `executive-dashboard.html`. It shows zeros when empty and has a labelled demo-data button |
 | `2e59d21`, `acceebe` | Detector tests with Node's built-in runner |
 | `dfe919e`, then the restyle commit | New look (warm white, black text, cobalt). `DESIGN.md` was updated first, then `styles.css`; layout and behaviour are unchanged |
