@@ -3,43 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dato — AI Data-Leak Firewall</title>
-<meta name="description" content="Dato inspects prompts and files locally and stops confidential data before it reaches AI tools. Defensive, local-first, audit-ready.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23070b14'/><path d='M50 18l26 10v20c0 18-11 30-26 34-15-4-26-16-26-34V28z' fill='none' stroke='%232de2c5' stroke-width='7'/><circle cx='50' cy='46' r='7' fill='%232de2c5'/><path d='M50 53v14' stroke='%232de2c5' stroke-width='7' stroke-linecap='round'/></svg>">
+<title>Dato · Check prompts before they reach AI</title>
+<meta name="description" content="Dato is a Chrome extension that checks prompts on ChatGPT, Claude and Gemini on your device, and warns, redacts or blocks confidential data before it sends.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%232F5BFF'/><text x='50' y='69' font-family='system-ui,sans-serif' font-size='58' font-weight='800' text-anchor='middle' fill='white'>D</text></svg>">
+<link rel="stylesheet" href="extension/popup.css">
+<link rel="stylesheet" href="extension/content.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="bg-grid" aria-hidden="true"></div>
-
+<a class="skip" href="#main">Skip to content</a>
 <header class="topbar">
-  <div class="brand">
-    <svg class="brand-mark" viewBox="0 0 100 100" aria-hidden="true">
-      <rect width="100" height="100" rx="22" fill="#0c1220"/>
-      <path d="M50 18l26 10v20c0 18-11 30-26 34-15-4-26-16-26-34V28z" fill="none" stroke="#2de2c5" stroke-width="7"/>
-      <circle cx="50" cy="46" r="7" fill="#2de2c5"/>
-      <path d="M50 53v14" stroke="#2de2c5" stroke-width="7" stroke-linecap="round"/>
-    </svg>
-    <div>
-      <div class="brand-name">Dato</div>
-      <div class="brand-tag">AI data-leak firewall</div>
-    </div>
-  </div>
-  <nav class="nav">
-    <a href="#install" id="nav-install" class="nav-link active">Extension</a>
-    <a href="#firewall" id="nav-firewall" class="nav-link">Firewall</a>
-    <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
-    <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
-    <a href="#dashboard" id="nav-dashboard" class="nav-link">Risk dashboard</a>
-    <a href="#assessment" id="nav-assessment" class="nav-link nav-cta">Assessment</a>
+  <a class="brand" href="#install" id="brand-home">
+    <span class="brand-mark" aria-hidden="true">D</span>
+    <span class="brand-name">dato</span>
+  </a>
+  <nav class="nav" aria-label="Main">
+    <a href="#install" id="nav-install" class="nav-link active">Install</a>
+    <a href="#firewall" id="nav-try" class="nav-link">Try it in the browser</a>
   </nav>
 </header>
+<nav class="subnav" id="subnav" aria-label="Browser playground" hidden>
+  <span class="subnav-label">Playground · separate from the extension</span>
+  <a href="#firewall" id="nav-firewall" class="nav-link">Check a prompt</a>
+  <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
+  <a href="#activity" id="nav-activity" class="nav-link">Log</a>
+  <a href="#dashboard" id="nav-dashboard" class="nav-link">Summary</a>
+  <a href="#assessment" id="nav-assessment" class="nav-link">Assessment</a>
+</nav>
 
-<div class="safety-strip">
-  <span class="pulse-dot"></span>
-  Defensive security tool — every scan runs locally in your browser. No prompt, file, or event is transmitted. Assessment mode uses synthetic data only.
-</div>
-
-<main class="main">
+<main class="main" id="main">
 
   <!-- FIREWALL -->
   <section id="view-firewall" class="view">
@@ -154,33 +146,75 @@
 
   <!-- INSTALL -->
   <section id="view-install" class="view active">
-    <div class="view-head">
-      <h1>Put Dato in front of every AI tool.</h1>
-      <p class="lede">The Chrome extension runs the same checks right inside ChatGPT, Claude, and Gemini, and stops the prompt before it sends. Everything stays on the computer. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
-    </div>
-    <div class="console-grid">
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Install in Chrome</span><span class="local-badge">free · local only</span></div>
-        <p><a class="btn btn-primary" href="dato-extension.zip" download>Download Dato for Chrome</a></p>
-        <ol class="install-steps">
-          <li>Unzip <code>dato-extension.zip</code>. You get a folder called <code>extension</code>.</li>
-          <li>In Chrome, go to <code>chrome://extensions</code>.</li>
-          <li>Turn on <b>Developer mode</b> in the top-right corner.</li>
-          <li>Click <b>Load unpacked</b> and choose the <code>extension</code> folder.</li>
-          <li>Pin Dato from the Extensions menu, then open ChatGPT, Claude, or Gemini and look for <b>Dato · Protected locally</b>.</li>
-        </ol>
-        <p class="posture-note">Keep the folder on your computer. Chrome runs Dato from it.</p>
+    <div class="hero">
+      <h1>Check what you paste into AI before it sends.</h1>
+      <p class="lede">Dato is a Chrome extension for ChatGPT, Claude and Gemini. It looks for keys, personal data and other confidential text on your device, then lets you edit, redact or stop the prompt.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary btn-lg" href="dato-extension.zip" download>Download Dato (ZIP)</a>
+        <a class="btn btn-ghost btn-lg" href="#steps" id="goto-steps">How to install</a>
       </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Quick test</span></div>
-        <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. Dato should stop it before it sends.</p>
-        <pre class="install-sample">Summarize this fake deployment note:
+      <p class="fine">Free. Works in Chrome. It is not on the Chrome Web Store yet, so you install it from this ZIP in three steps.</p>
+    </div>
+
+    <section id="steps" class="block" aria-labelledby="steps-h">
+      <h2 id="steps-h">Install in three steps</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-n" aria-hidden="true">1</span>
+          <div><h3>Download the ZIP</h3><p>Save <code>dato-extension.zip</code> to your computer.</p>
+          <p><a class="btn btn-primary" href="dato-extension.zip" download>Download Dato (ZIP)</a></p></div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true">2</span>
+          <div><h3>Extract it</h3><p>Right-click the ZIP and choose <b>Extract all</b> (Windows), or double-click it (Mac). You get a folder called <code>extension</code>. Keep it somewhere permanent: Chrome runs Dato from that folder.</p></div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true">3</span>
+          <div><h3>Load unpacked in Chrome</h3>
+          <p>Open <code>chrome://extensions</code>, turn on <b>Developer mode</b> (top right), click <b>Load unpacked</b>, and choose the <code>extension</code> folder.</p>
+          <p><button type="button" class="btn btn-secondary" id="copy-ext-url">Copy chrome://extensions</button> <span id="copy-note" class="note" role="status" aria-live="polite"></span></p></div>
+        </li>
+      </ol>
+      <p class="after-steps"><b>Then refresh</b> any ChatGPT, Claude or Gemini tab that was already open. Pin Dato from the puzzle-piece menu and open its popup to see the tab's status.</p>
+    </section>
+
+    <section id="preview" class="block" aria-labelledby="preview-h">
+      <h2 id="preview-h">What you'll see</h2>
+      <p class="sub">These are the extension's real popup and warning screens, drawn by the same code the extension runs. Only the sample prompts are made up.</p>
+      <div class="stage">
+        <div class="stage-col">
+          <h3 class="stage-title">The popup</h3>
+          <div class="seg" role="group" aria-label="Popup status to preview" id="popup-seg"></div>
+          <div class="frame frame-popup" id="popup-preview"></div>
+        </div>
+        <div class="stage-col stage-wide">
+          <h3 class="stage-title">When Dato holds a prompt</h3>
+          <div class="seg" role="group" aria-label="Warning to preview" id="warn-seg"></div>
+          <div class="frame" id="warn-preview"></div>
+        </div>
+      </div>
+      <p class="note stage-note" id="stage-note" role="status" aria-live="polite">Preview only. Nothing here sends or saves anything.</p>
+    </section>
+
+    <section class="block" aria-labelledby="test-h">
+      <h2 id="test-h">Check it works</h2>
+      <p class="sub">Paste this made-up example into ChatGPT, Claude or Gemini. Dato should hold it before it sends. These are public test values, not real credentials.</p>
+      <pre class="install-sample">Summarize this fake deployment note:
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 Customer email: dana@example.com
 Test card: 4111 1111 1111 1111</pre>
-        <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies in Chrome. It does not send anything to this dashboard.</p>
-      </div>
-    </div>
+    </section>
+
+    <section class="block" aria-labelledby="limits-h">
+      <h2 id="limits-h">What Dato doesn't do</h2>
+      <ul class="plain">
+        <li><b>It is a guard rail, not a lock.</b> It runs inside the browser, so a site change, another extension or the person at the keyboard can get around it. Pattern matching also misses things.</li>
+        <li><b>It checks typed and pasted text.</b> File uploads are not inspected yet.</li>
+        <li><b>It stays on your device.</b> Prompts are checked locally and never sent anywhere. The extension keeps only counts of what it found, never your text.</li>
+        <li><b>Chrome only, three sites.</b> ChatGPT, Claude and Gemini. On any other site the popup says it is not protecting you.</li>
+      </ul>
+      <p class="sub">Want to try the detection first? <a href="#firewall" id="goto-firewall">Check a prompt in the browser</a>. That playground is separate from the extension and keeps its own notes in this page.</p>
+    </section>
   </section>
 
   <!-- ASSESSMENT -->
@@ -196,12 +230,17 @@ Test card: 4111 1111 1111 1111</pre>
 </main>
 
 <footer class="footer">
-  <span>Dato · local-first AI data-leak protection</span>
-  <span class="footer-note">Demo build — defensive use only. Detection runs entirely in the browser.</span>
+  <span>Dato · checks prompts on your device</span>
+  <span class="footer-note">Best-effort protection. Use made-up data when testing.</span>
 </footer>
 
+<script src="extension/detectors.js"></script>
+<script>window.DatoExtDetect = window.DatoDetect;</script>
 <script src="detectors.js"></script>
+<script src="extension/policy.js"></script>
+<script src="extension/ui.js"></script>
 <script src="app.js"></script>
 <script src="assessment.js"></script>
+<script src="preview.js"></script>
 </body>
 </html>
