@@ -25,6 +25,7 @@ One column of content under a top bar. The console is two panels (input, result)
 - **In use:** verdict banner in the colour of the action; findings rows with a severity tag.
 - **Destructive action armed:** button turns red and its label changes to "Click again to confirm" for 4 seconds.
 - **After reset:** identical to the empty state.
+- **Edited after inspecting:** the result panel shows the muted empty-state sentence asking for a new inspection, and the Send button is disabled (dimmed) and reads "Inspect first to send".
 
 ## Accessibility
-Real `label` for the prompt box (visually hidden), `role="alert"` on errors, `aria-live` on the result, visible focus, text never relies on colour alone (verdicts carry words and icons).
+Real `label` for the prompt box (visually hidden), `role="alert"` on errors, `aria-live` on the result, visible focus (a 2px teal ring on every control, kept inside segmented buttons), a skip-to-tool link, `aria-current` on the open tab, `aria-pressed` on policy buttons, `prefers-reduced-motion` turns off the pulse, fade-in and transitions, text never relies on colour alone (verdicts carry words and icons).

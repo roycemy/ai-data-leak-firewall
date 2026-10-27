@@ -8,17 +8,17 @@ Dato is a local-first AI data-leak firewall. It inspects prompts and files **bef
 
 ## Where this repo came from
 
-This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site opens on a page to download it.
+This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site has an Extension tab to download it.
 
 ## How to use
 
-1. **Extension tab (opens first):** download `dato-extension.zip` and follow the install steps. The extension checks prompts on ChatGPT, Claude, and Gemini before they send.
-2. **Firewall tab:** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). Dato shows what it found and what your policy says to do.
-3. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
-4. **Audit log tab:** filter events, export them as JSON, or clear them.
-5. **Risk dashboard tab:** totals and charts computed from the log.
+1. **Firewall tab (opens first):** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). Dato shows what it found and what your policy says to do. **Send** is only available after an inspection, and only while the text is exactly what was inspected. If you edit the prompt afterwards, inspect again.
+2. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
+3. **Audit log tab:** filter events, export them as JSON, or clear them.
+4. **Risk dashboard tab:** totals and charts computed from the log.
+5. **Extension tab (last tab):** download `dato-extension.zip` and follow the install steps. The extension checks prompts on ChatGPT, Claude, and Gemini before they send.
 
-Empty or invalid input (nothing to inspect, file over 2 MB, unreadable file) shows a message in the page. Nothing uses pop-up dialogs.
+Empty or invalid input (nothing to inspect, file over 2 MB, unreadable file) shows a message in the page. Nothing uses pop-up dialogs. Every control can be reached with the Tab key.
 
 ## Where the agent differed from what I expected
 
@@ -40,11 +40,11 @@ Employees paste customer records, credentials, source code, contracts, and finan
 
 - **Prompt & file inspection** — paste a prompt or attach text-based files (`.txt`, `.md`, `.csv`, `.json`, source files, logs, `.env`, …). Files are read locally with the browser File API.
 - **Detection engine** (`detectors.js`)
-  - **Secrets & credentials** — AWS keys, GitHub/OpenAI/Anthropic/Slack/Stripe/Google tokens, JWTs, private-key blocks, DB connection strings, hardcoded passwords, credentialed URLs
+  - **Secrets & credentials** — AWS keys, GitHub/OpenAI/Anthropic/Slack/Stripe/Google tokens, JWTs, private-key blocks, DB connection strings, hardcoded passwords, passwords and PINs stated in plain words ("my password is …"), credentialed URLs
   - **PII** — SSNs, Luhn-validated payment cards, emails, phones, dates of birth, passports, driver's licenses, street addresses
   - **Financial data** — IBANs, routing/account details, revenue/payroll/runway figures, invoice references
   - **Proprietary source code** — code-density heuristics that flag pasted code
-  - **Contracts & legal** — clause-language heuristics (indemnification, governing law, NDA terms, …)
+  - **Contracts & legal** — clause-language heuristics (indemnification, governing law, NDA terms, …), matched on whole words so ordinary words like "Monday" and "agenda" do not count
 - **Policy controls** — per data class: **Allow / Warn / Redact / Block**. Redaction produces a safe-to-send copy with placeholders.
 - **Audit log** — every scan, policy decision, and simulated send is logged locally and exportable as JSON.
 - **Risk dashboard** — findings by data class, policy outcomes, 7-day activity, and current posture at a glance.
@@ -61,19 +61,40 @@ python3 -m http.server 8000
 
 Or just open `index.html` in a browser.
 
+## Run the tests
+
+The detector tests use Node's built-in test runner, so there is nothing to install:
+
+```bash
+node --test tests/detectors.test.js
+```
+
 ## Architecture
 
 | File | Role |
 | --- | --- |
-| `index.html` | App shell: Extension download, Firewall console, Policies, Audit log, Risk dashboard, Assessment |
+| `index.html` | App shell: Firewall console (opens first), Policies, Audit log, Risk dashboard, Assessment, Extension download |
 | `detectors.js` | Pure detection engine (patterns + heuristics + redaction). Runs in browser or Node (`module.exports`). |
 | `app.js` | Console UI, policy state, local audit log, dashboard |
 | `assessment.js` | Synthetic assessment module |
+| `tests/detectors.test.js` | Tests for `detectors.js` (Node's built-in runner) |
 | `styles.css` | Brand and component system |
 | `extension/` | Chrome extension (Manifest V3) for ChatGPT, Claude, and Gemini |
 | `dato-extension.zip` | Zipped copy of `extension/` for the download button |
 
-State lives in `app.js`: `policies` (object, class to action), `events` (audit log array) and `attachedFiles`. Policies and events are saved to `localStorage`; clearing site data or pressing Reset everything wipes them. Planning docs: [PROPOSAL.md](PROPOSAL.md), [PRD.md](PRD.md), [DESIGN.md](DESIGN.md), [AGENTS.md](AGENTS.md).
+State lives in `app.js`: `policies` (object, class to action), `events` (audit log array), `attachedFiles`, and `inspectedText` (the exact text the last Inspect ran on, which Send must still match). Policies and events are saved to `localStorage`; clearing site data or pressing Reset everything wipes them. Planning docs: [PROPOSAL.md](PROPOSAL.md), [PRD.md](PRD.md), [DESIGN.md](DESIGN.md), [AGENTS.md](AGENTS.md).
+
+## Changes since the first submission
+
+The first submission is commit `03cb8bf`. These changes were made afterwards by the AI agent, in separate commits. The two reflection sections above ("Where the agent differed" and "Required question") were not changed and describe the original submission.
+
+| Commit | Change |
+| --- | --- |
+| `ffa3707` | Detector fixes: contract terms match whole words ("Monday agenda" no longer looks like an NDA) and "my password is …" is now caught |
+| `4f59de5` | Send only works on the exact text that was inspected |
+| `8c786d6` | The site opens on the Firewall tab; the Extension tab moved to the end |
+| `366f6c3` | Keyboard focus rings, skip link, `aria-current` / `aria-pressed`, reduced-motion support |
+| `2e59d21`, `acceebe` | Detector tests with Node's built-in runner |
 
 ## Safety & scope
 
