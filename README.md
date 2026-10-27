@@ -95,6 +95,7 @@ The first submission is commit `03cb8bf`. These changes were made afterwards by 
 | `8c786d6` | The site opens on the Firewall tab; the Extension tab moved to the end |
 | `366f6c3` | Keyboard focus rings, skip link, `aria-current` / `aria-pressed`, reduced-motion support |
 | `2e59d21`, `acceebe` | Detector tests with Node's built-in runner |
+| `dfe919e`, then the restyle commit | New look (warm white, black text, cobalt). `DESIGN.md` was updated first, then `styles.css`; layout and behaviour are unchanged |
 
 ## Safety & scope
 
