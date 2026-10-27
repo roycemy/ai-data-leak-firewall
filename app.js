@@ -36,6 +36,8 @@
     views.forEach(function (v) {
       document.getElementById('view-' + v).classList.toggle('active', v === name);
       document.getElementById('nav-' + v).classList.toggle('active', v === name);
+      if (v === name) document.getElementById('nav-' + v).setAttribute('aria-current', 'page');
+      else document.getElementById('nav-' + v).removeAttribute('aria-current');
     });
     if (name === 'activity') renderActivity();
     if (name === 'dashboard') renderDashboard();
@@ -43,6 +45,11 @@
   }
   views.forEach(function (v) {
     document.getElementById('nav-' + v).addEventListener('click', function (e) { e.preventDefault(); showView(v); });
+  });
+
+  document.getElementById('skip-link').addEventListener('click', function (e) {
+    e.preventDefault();
+    document.getElementById('main').focus();
   });
 
   // ---------- File intake ----------
@@ -70,7 +77,7 @@
     chip.textContent = '📎 ' + name + (note ? ' — ' + note : '');
     if (idx != null) {
       var x = document.createElement('button');
-      x.className = 'chip-x'; x.textContent = '×'; x.title = 'Remove file';
+      x.className = 'chip-x'; x.textContent = '×'; x.title = 'Remove file'; x.setAttribute('aria-label', 'Remove ' + name);
       x.addEventListener('click', function () { attachedFiles[idx] = null; chip.remove(); markStaleIfChanged(); });
       chip.appendChild(x);
     }
@@ -302,6 +309,7 @@
         var b = document.createElement('button');
         b.className = 'seg-btn' + (policies[cat] === a ? ' active seg-' + a : '');
         b.textContent = ACTION_LABEL[a];
+        b.setAttribute('aria-pressed', String(policies[cat] === a));
         b.addEventListener('click', function () {
           policies[cat] = a; savePolicies(); renderPolicies();
           logEvent('policy-change', [], 'policy:' + cat + '=' + a);
