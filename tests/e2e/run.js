@@ -432,12 +432,14 @@ function assert(cond, msg) { if (!cond) throw new Error(msg); }
   });
 
   await t('delete needs a second click and leaves a true empty state', async () => {
+    await ext.reload();
+    await ext.waitFor(`document.getElementById('delete').textContent === 'Delete all activity'`);
     await ext.click('#delete');
-    await sleep(150);
+    assert(await ext.waitFor(`document.getElementById('delete').textContent.startsWith('Click again')`, 2000), 'first click did not arm the button');
     assert((await events()).length > 0, 'deleted on first click');
     const deletedAt = Date.now();
     await ext.click('#delete');
-    await ext.waitFor(`document.getElementById('log').textContent.includes('No activity recorded yet')`, 3000);
+    assert(await ext.waitFor(`document.getElementById('log').textContent.includes('No activity recorded yet')`, 3000), 'empty state not shown after delete');
     const all = await storage();
     assert(!all.dato_events, 'events not cleared: ' + JSON.stringify(all.dato_events));
     assert(!all.dato_health || Object.values(all.dato_health).every((h) => h.t > deletedAt), 'old health records survived: ' + JSON.stringify(all.dato_health));

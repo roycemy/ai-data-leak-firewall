@@ -34,7 +34,7 @@
       "https://claude.ai/*",
       "https://gemini.google.com/*"
     ],
-    "js": ["detectors.js", "policy.js", "adapters.js", "content.js"],
+    "js": ["detectors.js", "policy.js", "adapters.js", "ui.js", "content.js"],
     "css": ["content.css"],
     "run_at": "document_start",
     "all_frames": false

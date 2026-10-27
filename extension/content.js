@@ -27,16 +27,6 @@
   var storageFailed = false;
   var APPROVAL_MS = 3000;
 
-  var CATEGORY_NAMES = { secrets: 'Secrets & credentials', pii: 'Personal data', financial: 'Financial data', source: 'Source code', contract: 'Contracts & legal', sensitive: 'Sensitive context' };
-  var CATEGORY_WHY = {
-    secrets: 'Anyone who sees a credential can use it to act as you or your company.',
-    pii: 'Personal data about a real person.',
-    financial: 'Bank details or non-public company figures.',
-    source: 'Reads like proprietary source code.',
-    contract: 'Reads like contract or legal language.',
-    sensitive: 'Marked confidential, internal or restricted.'
-  };
-
   /* ---------- extension plumbing ---------- */
 
   function runtimeAlive() { try { return !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; } }
@@ -182,72 +172,10 @@
 
   /* ---------- review dialog ---------- */
 
-  function h(tag, attrs, children) {
-    var el = document.createElement(tag);
-    Object.keys(attrs || {}).forEach(function (k) {
-      if (k === 'text') el.textContent = attrs[k];
-      else if (k === 'class') el.className = attrs[k];
-      else el.setAttribute(k, attrs[k]);
-    });
-    (children || []).forEach(function (c) { if (c) el.appendChild(c); });
-    return el;
-  }
-
-  function verdictCopy(d) {
-    var strictLine = d.strict ? ' Strict mode is on, so this review has no send-anyway option.' : '';
-    if (d.failed) return ['Dato could not check this prompt', 'Something went wrong while scanning, so Dato is holding the prompt instead of guessing.' + strictLine];
-    if (d.action === 'block') return ['Blocked by your policy', 'This prompt contains data your policy does not allow to leave this browser. Edit it' + (d.canRedact ? ' or redact it' : '') + ' before sending.' + strictLine];
-    if (d.action === 'redact') return ['Redaction required', 'Your policy only sends this after the flagged values are replaced. Check the preview below.'];
-    return ['Check this before it sends', 'Dato found data that may be confidential.' + (d.strict ? ' Strict mode is on, so edit or redact it to continue.' : ' You can still send it if you meant to.')];
-  }
-
-  var LABEL = { allow: 'Allowed', warn: 'Warn', redact: 'Redact', block: 'Block' };
-
-  function findingRow(item) {
-    var f = item.finding;
-    var meta = CATEGORY_NAMES[f.category] + ' · ' + CATEGORY_WHY[f.category];
-    return h('li', { class: 'dato-finding' }, [
-      h('span', { class: 'dato-pill dato-pill-' + item.effective, text: LABEL[item.effective] }),
-      h('div', { class: 'dato-finding-copy' }, [
-        h('b', { text: f.label + (f.tentative ? ' (possible match)' : '') }),
-        h('span', { text: meta }),
-        item.note ? h('small', { text: item.note }) : null
-      ]),
-      f.length > 0 ? h('code', { text: f.masked, title: 'Masked: the full value is not shown or stored' }) : h('code', { text: 'whole prompt' })
-    ]);
-  }
-
-  function previewBlock(text, decision) {
-    var redacted = Policy.redactText(text, decision);
-    var shown = redacted.length > 1500 ? redacted.slice(0, 1500) + '\n…' : redacted;
-    var pre = h('pre', { class: 'dato-preview', tabindex: '0', 'aria-label': 'Redacted prompt preview' });
-    shown.split(/(\[REDACTED: [^\]]+\])/).forEach(function (part, i) {
-      pre.appendChild(i % 2 ? h('mark', { text: part }) : document.createTextNode(part));
-    });
-    return h('div', { class: 'dato-preview-wrap' }, [h('h3', { text: 'What Redact and send will submit' }), pre]);
-  }
+  var h = window.DatoUI.h;
 
   function renderReview(message) {
-    var d = review.decision, copy = verdictCopy(d);
-    var shown = d.items.filter(function (it) { return it.effective !== 'allow'; });
-    var list = h('ul', { class: 'dato-findings', 'aria-label': 'Findings' }, shown.slice(0, 8).map(findingRow));
-    var more = shown.length > 8 ? h('p', { class: 'dato-more', text: '+' + (shown.length - 8) + ' more' }) : null;
-    var buttons = [h('button', { type: 'button', class: 'dato-btn', 'data-dato': 'cancel', text: 'Go back and edit' })];
-    if (d.overrideAllowed) buttons.push(h('button', { type: 'button', class: 'dato-btn dato-btn-danger', 'data-dato': 'override', text: 'Send anyway' }));
-    if (d.canRedact) buttons.push(h('button', { type: 'button', class: 'dato-btn dato-btn-primary', 'data-dato': 'redact', text: 'Redact and send' }));
-    var dialog = h('section', { class: 'dato-dialog dato-' + d.action, role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'dato-title', 'aria-describedby': 'dato-verdict-text' }, [
-      h('header', { class: 'dato-head' }, [
-        h('div', { class: 'dato-logo', 'aria-hidden': 'true', text: 'D' }),
-        h('div', {}, [h('h2', { id: 'dato-title', text: 'Dato is holding this prompt' }), h('span', { text: adapter.name + ' · checked on this device' })])
-      ]),
-      h('div', { class: 'dato-verdict' }, [h('b', { text: copy[0] }), h('p', { id: 'dato-verdict-text', text: copy[1] })]),
-      list, more,
-      d.canRedact ? previewBlock(review.text, d) : null,
-      h('p', { class: 'dato-msg', role: 'status', 'aria-live': 'polite', text: message || '' }),
-      h('p', { class: 'dato-local', text: 'Dato logs counts of what it found, never your prompt. Browser checks are best-effort: they can miss data and can be bypassed.' }),
-      h('div', { class: 'dato-actions' }, buttons)
-    ]);
-    var backdrop = h('div', { class: 'dato-backdrop', id: 'dato-modal' }, [dialog]);
+    var backdrop = window.DatoUI.reviewDialog({ siteName: adapter.name, decision: review.decision, text: review.text, message: message });
     if (review.el) review.el.replaceWith(backdrop); else document.documentElement.appendChild(backdrop);
     review.el = backdrop;
     backdrop.addEventListener('click', onReviewClick);

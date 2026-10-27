@@ -7,37 +7,10 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <header class="top">
-    <div class="mark" aria-hidden="true">D</div>
-    <div><h1>Dato</h1><p>Checks prompts on this device</p></div>
-  </header>
-
-  <section class="status" id="status" data-state="checking" aria-live="polite">
-    <span class="dot" aria-hidden="true"></span>
-    <div><strong id="status-title">Checking this tab…</strong><span id="status-detail"></span></div>
-  </section>
-
-  <main>
-    <h2>Policy by data type</h2>
-    <p class="hint">When several types are found, the strictest action wins.</p>
-    <div id="policies"></div>
-
-    <div class="strict">
-      <label class="switch">
-        <input type="checkbox" id="strict">
-        <span><strong>Strict mode</strong><small>Removes Send anyway from every review. Anyone using this browser can turn it off here, so it is a guard rail, not a lock.</small></span>
-      </label>
-    </div>
-
-    <div class="row">
-      <button id="reset" type="button">Reset policies</button>
-      <a class="primary" href="dashboard.html" target="_blank">Open activity dashboard</a>
-    </div>
-    <p id="saved" class="saved" role="status" aria-live="polite"></p>
-  </main>
-
-  <footer>Best-effort browser check. It can miss data and can be bypassed. No prompt text leaves this browser.</footer>
+  <div id="app"></div>
+  <p id="saved" class="saved" role="status" aria-live="polite"></p>
   <script src="policy.js"></script>
+  <script src="ui.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

@@ -1,97 +1,56 @@
-/* Dato popup: policies, strict mode and the honest status of the current tab.
- * Reads/changes chrome.storage.local category keys and dato_settings.
+/* Dato popup: wires the shared popup view (ui.js) to chrome.storage.local and
+ * the current tab's real status. Reads/changes category keys and dato_settings.
  */
 (function () {
   'use strict';
-  var P = window.DatoPolicy;
-  var META = {
-    secrets: ['Secrets & credentials', 'API keys, tokens, passwords, private keys'],
-    pii: ['Personal data', 'SSNs, card numbers, emails, phones, addresses'],
-    financial: ['Financial data', 'IBANs, account numbers, company figures'],
-    source: ['Source code', 'Whole-prompt code detection'],
-    contract: ['Contracts & legal', 'Agreement and legal language'],
-    sensitive: ['Sensitive context', '"Confidential", "internal only" and similar']
-  };
-  var SUPPORTED = { 'chatgpt.com': 'ChatGPT', 'chat.openai.com': 'ChatGPT', 'claude.ai': 'Claude', 'gemini.google.com': 'Gemini' };
-  var STATUS_TITLE = { active: 'Active', degraded: 'Degraded', error: 'Error', unsupported: 'Not protected here', checking: 'Checking…' };
-
-  var root = document.getElementById('policies');
-  var strictBox = document.getElementById('strict');
+  var P = window.DatoPolicy, UI = window.DatoUI;
+  var SUPPORTED = { 'chatgpt.com': 1, 'chat.openai.com': 1, 'claude.ai': 1, 'gemini.google.com': 1 };
+  var app = document.getElementById('app');
   var saved = document.getElementById('saved');
   var savedTimer = 0;
 
   function note(text) { saved.textContent = text; clearTimeout(savedTimer); savedTimer = setTimeout(function () { saved.textContent = ''; }, 2500); }
 
-  function policyRow(key, value) {
-    var id = 'policy-' + key;
-    var row = document.createElement('div');
-    row.className = 'policy';
-    var label = document.createElement('label');
-    label.htmlFor = id;
-    label.innerHTML = '<strong></strong><span></span>';
-    label.querySelector('strong').textContent = META[key][0];
-    label.querySelector('span').textContent = META[key][1];
-    var select = document.createElement('select');
-    select.id = id;
-    P.ACTIONS.forEach(function (a) {
-      var o = document.createElement('option');
-      o.value = a; o.textContent = a.charAt(0).toUpperCase() + a.slice(1);
-      select.appendChild(o);
+  var handlers = {
+    onPolicy: function (key, value) {
+      var update = {}; update[key] = value;
+      chrome.storage.local.set(update, function () { note(UI.CATEGORY_NAMES[key] + ': ' + value + '. Open tabs use it now.'); });
+    },
+    onStrict: function (on) {
+      chrome.storage.local.get('dato_settings', function (all) {
+        var s = P.cleanSettings(all.dato_settings);
+        s.strict = on;
+        chrome.storage.local.set({ dato_settings: s }, function () { note(on ? 'Strict mode on. Send anyway is removed.' : 'Strict mode off.'); });
+      });
+    },
+    onReset: function () { chrome.storage.local.set(P.DEFAULT_POLICIES, function () { load(true); note('Policies reset to defaults.'); }); }
+  };
+
+  // Reads storage; replaces the popup view.
+  function load(keepOpen) {
+    chrome.storage.local.get(null, function (all) {
+      app.textContent = '';
+      app.appendChild(UI.popupView({
+        status: { state: 'checking', detail: '' },
+        policies: P.cleanPolicies(all), strict: P.cleanSettings(all.dato_settings).strict,
+        dashboardHref: 'dashboard.html', handlers: handlers, openPolicies: !!keepOpen
+      }));
+      checkTab();
     });
-    select.value = value;
-    select.dataset.action = value;
-    select.addEventListener('change', function () {
-      var update = {}; update[key] = select.value;
-      select.dataset.action = select.value;
-      chrome.storage.local.set(update, function () { note(META[key][0] + ': ' + select.value + '. Applies to open tabs now.'); });
-    });
-    row.append(label, select);
-    return row;
-  }
-
-  // Reads policies; changes the policy list.
-  function render(all) {
-    var policies = P.cleanPolicies(all);
-    root.textContent = '';
-    P.CATEGORY_KEYS.forEach(function (k) { root.appendChild(policyRow(k, policies[k])); });
-    strictBox.checked = P.cleanSettings(all.dato_settings).strict;
-  }
-
-  function load() { chrome.storage.local.get(null, render); }
-
-  strictBox.addEventListener('change', function () {
-    chrome.storage.local.get('dato_settings', function (all) {
-      var s = P.cleanSettings(all.dato_settings);
-      s.strict = strictBox.checked;
-      chrome.storage.local.set({ dato_settings: s }, function () { note(s.strict ? 'Strict mode on. Send anyway is removed.' : 'Strict mode off.'); });
-    });
-  });
-
-  document.getElementById('reset').addEventListener('click', function () {
-    chrome.storage.local.set(P.DEFAULT_POLICIES, function () { load(); note('Policies reset to defaults.'); });
-  });
-
-  function showStatus(state, detail) {
-    var el = document.getElementById('status');
-    el.dataset.state = state;
-    document.getElementById('status-title').textContent = STATUS_TITLE[state] || state;
-    document.getElementById('status-detail').textContent = detail;
   }
 
   // Asks the tab's content script for its real editor and listener checks.
   function checkTab() {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      var tab = tabs && tabs[0];
-      var host = '';
+      var tab = tabs && tabs[0], host = '';
       try { host = new URL(tab.url).hostname; } catch (e) { host = ''; }
-      if (!SUPPORTED[host]) { showStatus('unsupported', 'Dato only checks ChatGPT, Claude and Gemini. Prompts on this site are not checked.'); return; }
+      if (!SUPPORTED[host]) { UI.setStatus(app, { state: 'unsupported', detail: 'Dato only checks ChatGPT, Claude and Gemini. Prompts on this site are not checked.' }); return; }
       chrome.tabs.sendMessage(tab.id, { type: 'dato:status' }, function (res) {
-        if (chrome.runtime.lastError || !res) { showStatus('error', 'Dato is not running in this tab. Refresh the page to start protection.'); return; }
-        showStatus(res.state, res.detail);
+        if (chrome.runtime.lastError || !res) { UI.setStatus(app, { state: 'error', detail: 'Dato is not running in this tab. Refresh the page to start protection.' }); return; }
+        UI.setStatus(app, { state: res.state, detail: res.detail });
       });
     });
   }
 
-  load();
-  checkTab();
+  load(false);
 })();
