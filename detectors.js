@@ -93,7 +93,7 @@
     { id: 'financial-figures', category: 'financial', severity: 'medium', label: 'Confidential financial figure',
       pattern: /(?:revenue|ARR|MRR|EBITDA|net income|gross margin|payroll|salary|compensation|valuation|funding round|burn rate|runway)[^\n.]{0,60}\$[\d,.]+(?:\s?[KMB])?/gi, maxFindings: 15 },
     { id: 'invoice-reference', category: 'financial', severity: 'low', label: 'Invoice / billing reference',
-      pattern: /\b(?:invoice|billing|purchase order)\b\s*(?:number|no\.?|#)?\s*:?\s*[A-Z0-9][A-Z0-9\-]{4,}|\bPO\s*#?\s*:?\s*\d{4,}/gi, maxFindings: 15 }
+      pattern: /\b(?:invoice|billing|purchase order)\b\s*(?:number|no\.?|#)?\s*:?\s*(?=[A-Z0-9\-]*\d)[A-Z0-9][A-Z0-9\-]{4,}|\bPO\s*#?\s*:?\s*\d{4,}/gi, maxFindings: 15 }
   ];
 
   // Heuristic category detectors (no single span; report whole-region findings)
@@ -113,7 +113,9 @@
     if (/\b(import|require|export|module\.exports|public static void|console\.log|System\.out)\b/.test(text)) signals += 2;
     var density = codeLineHits / Math.max(lines.length, 1);
     if (density > 0.25) signals += 2;
-    if (signals >= 3 && text.length > 80) {
+    // One pasted line is a question about code, not a codebase. Ask for a real block.
+    var codeLines = lines.filter(function (x) { return /\S/.test(x); }).length;
+    if (signals >= 3 && text.length > 80 && codeLines >= 4) {
       return [{ index: 0, match: text.slice(0, 120) + (text.length > 120 ? '…' : ''), heuristic: true }];
     }
     return [];

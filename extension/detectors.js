@@ -14,6 +14,9 @@
     sensitive: { label: 'Sensitive Context',     weight: 1 }
   };
 
+  // Words that follow "password is" in ordinary sentences, not values.
+  var COMMON_WORDS = /^(?:required|requires|needed|missing|incorrect|invalid|wrong|expired|changed|reset|stored|hashed|encrypted|optional|empty|blank|correct|secure|strong|weak|longer|shorter|different|protected|saved|visible|hidden|enabled|disabled|something|anything|nothing|usually|always|never|probably|actually|another|forgotten|sensitive|private|unknown|generated|rotated|managed|shared|working|accepted|rejected|set|not|the|this|that|your|mine|ours|theirs)$/i;
+
   var SEVERITY_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
 
   // Each rule: id, category, severity, label, pattern (global regex) or detect(text) -> [{index, match}]
@@ -50,7 +53,18 @@
     { id: 'partial-openai-key', category: 'secrets', severity: 'medium', tentative: true, label: 'Partial or shortened OpenAI-style key',
       pattern: /\bsk-(?:proj-|ant-)?[A-Za-z0-9_\-]{8,23}\b/g },
     { id: 'credential-named', category: 'secrets', severity: 'high', tentative: true, label: 'Credential named in plain language',
-      pattern: /\b(?:password|passcode|passphrase|pin|api[ _-]?key|secret[ _-]?key|access[ _-]?token|auth[ _-]?token|session[ _-]?token|private[ _-]?key|ssn|social security(?:\s*number)?|credit[ _-]?card(?:\s*number)?|card[ _-]?number|cvv|cvc|security[ _-]?code|routing[ _-]?number|bank[ _-]?account(?:\s*number)?)\b\s*(?:is|=|:|->|-)\s*[^\s,;]{3,}/gi },
+      detect: function (text) {
+        // "password is X" only counts when X looks like a value, not a word in a sentence.
+        var out = [];
+        var re = /\b(?:password|passcode|passphrase|pin|api[ _-]?key|secret[ _-]?key|access[ _-]?token|auth[ _-]?token|session[ _-]?token|private[ _-]?key|ssn|social security(?:\s*number)?|credit[ _-]?card(?:\s*number)?|card[ _-]?number|cvv|cvc|security[ _-]?code|routing[ _-]?number|bank[ _-]?account(?:\s*number)?)\b\s*(?:is|=|:|->|-)\s*([^\s,;]{3,})/gi, m;
+        while ((m = re.exec(text)) !== null) {
+          var value = m[1].replace(/[.!?]+$/, '');
+          var wordy = /^[A-Za-z]+$/.test(value);
+          if (wordy && (value.length < 6 || COMMON_WORDS.test(value))) continue;
+          out.push({ index: m.index, match: m[0] });
+        }
+        return out;
+      } },
     { id: 'unknown-token', category: 'secrets', severity: 'medium', tentative: true, label: 'Possible key or token (unrecognized format)',
       detect: function (text) {
         var out = [];
@@ -100,10 +114,10 @@
       pattern: /\b[A-Z]{2}\d{2}(?:\s?[A-Z0-9]{4}){3,7}\b/g },
     { id: 'routing-number', category: 'financial', severity: 'high', label: 'Bank routing / account detail',
       pattern: /(?:routing(?:\s*(?:number|no|#))?|acct(?:ount)?(?:\s*(?:number|no|#))?)[:\s]*\d{8,17}\b/gi },
-    { id: 'financial-figures', category: 'financial', severity: 'medium', label: 'Confidential financial figure',
+    { id: 'financial-figures', category: 'financial', severity: 'medium', tentative: true, label: 'Confidential financial figure',
       pattern: /(?:revenue|ARR|MRR|EBITDA|net income|gross margin|payroll|salary|compensation|valuation|funding round|burn rate|runway)[^\n.]{0,60}\$[\d,.]+(?:\s?[KMB])?/gi, maxFindings: 15 },
     { id: 'invoice-reference', category: 'financial', severity: 'low', label: 'Invoice / billing reference',
-      pattern: /\b(?:invoice|billing|purchase order)\b\s*(?:number|no\.?|#)?\s*:?\s*[A-Z0-9][A-Z0-9\-]{4,}|\bPO\s*#?\s*:?\s*\d{4,}/gi, maxFindings: 15 }
+      pattern: /\b(?:invoice|billing|purchase order)\b\s*(?:number|no\.?|#)?\s*:?\s*(?=[A-Z0-9\-]*\d)[A-Z0-9][A-Z0-9\-]{4,}|\bPO\s*#?\s*:?\s*\d{4,}/gi, maxFindings: 15 }
   ];
 
   // Heuristic category detectors (no single span; report whole-region findings)
@@ -120,39 +134,40 @@
     if (/\b(import|require|export|module\.exports|public static void|console\.log|System\.out)\b/.test(text)) signals += 2;
     var density = codeLineHits / Math.max(lines.length, 1);
     if (density > 0.25) signals += 2;
-    if (signals >= 3 && text.length > 80) {
+    // One pasted line is a question about code, not a codebase. Ask for a real block.
+    var codeLines = lines.filter(function (x) { return /\S/.test(x); }).length;
+    if (signals >= 3 && text.length > 80 && codeLines >= 4) {
       return [{ index: 0, match: text.slice(0, 120) + (text.length > 120 ? '…' : ''), heuristic: true }];
     }
     return [];
   }
 
   function detectContract(text) {
-    var terms = ['non-disclosure', 'nda', 'hereinafter', 'indemnif', 'governing law', 'confidentiality',
-      'party of the first part', 'terms and conditions', 'termination clause', 'liability',
-      'agreement is entered', 'in witness whereof', 'force majeure', 'arbitration', 'severability'];
-    var lower = text.toLowerCase();
+    // Whole words only: a substring test for "nda" matched "Monday" and "agenda".
+    var terms = [/\bnon-disclosure\b/i, /\bNDA\b/, /\bhereinafter\b/i, /\bindemnif/i, /\bgoverning law\b/i, /\bconfidentiality\b/i,
+      /\bparty of the first part\b/i, /\btermination clause\b/i, /\blimitation of liability\b/i,
+      /\bagreement is entered\b/i, /\bin witness whereof\b/i, /\bforce majeure\b/i, /\bbinding arbitration\b/i, /\bseverability\b/i];
     var hits = [];
     for (var i = 0; i < terms.length; i++) {
-      var idx = lower.indexOf(terms[i]);
-      if (idx !== -1) hits.push(idx);
+      var m = terms[i].exec(text);
+      if (m) hits.push(m.index);
     }
-    if (hits.length >= 2 || (hits.length >= 1 && /\b(agreement|contract|party|parties)\b/i.test(text) && hits.length >= 1 && lower.split('agreement').length > 3)) {
+    hits.sort(function (a, b) { return a - b; });
+    if (hits.length >= 2) {
       return [{ index: hits[0], match: text.slice(hits[0], hits[0] + 120) + '…', heuristic: true }];
     }
     return [];
   }
 
-  var SENSITIVE_PHRASES = ['confidential', 'internal use only', 'internal only', 'do not share',
-    'do not distribute', 'not for distribution', 'proprietary', 'trade secret', 'restricted',
-    'classified', 'under nda', 'non-disclosure', 'need to know', 'off the record', 'private and confidential'];
+  // Labels people put on confidential material. A bare "confidential", "restricted" or "proprietary" in an
+  // ordinary sentence ("the meeting is confidential", "a proprietary algorithm") is not enough on its own.
+  var SENSITIVE_PHRASES = /\b(?:internal use only|internal only|do not (?:share|distribute|forward)|not for (?:distribution|external use)|under (?:an )?nda|non-disclosure agreement|trade secrets?|private and confidential|strictly confidential|company confidential|confidential (?:and proprietary|information|document|material)|proprietary (?:and|&) confidential|proprietary information|classified (?:information|document|material))\b|^\s*confidential\s*[:\-\u2013\u2014]/im;
+  var ALL_CAPS_LABEL = /\bCONFIDENTIAL\b/; // case-sensitive, so a lowercase "confidential" does not match
 
   function detectSensitiveContext(text) {
-    var lower = text.toLowerCase();
     var hits = [];
-    for (var i = 0; i < SENSITIVE_PHRASES.length; i++) {
-      var idx = lower.indexOf(SENSITIVE_PHRASES[i]);
-      if (idx !== -1) hits.push(idx);
-    }
+    var m = SENSITIVE_PHRASES.exec(text) || ALL_CAPS_LABEL.exec(text);
+    if (m) hits.push(m.index);
     if (hits.length >= 1 && text.length > 20) {
       return [{ index: hits[0], match: text.slice(hits[0], hits[0] + 120) + '\u2026', heuristic: true }];
     }
