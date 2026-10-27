@@ -446,12 +446,14 @@
   var firewallLink = document.getElementById('goto-firewall');
   firewallLink.addEventListener('click', function (e) { e.preventDefault(); showView('firewall'); });
 
+  document.getElementById('goto-install').addEventListener('click', function (e) { e.preventDefault(); showView('install'); });
+
   var policiesLink = document.getElementById('goto-policies');
   policiesLink.addEventListener('click', function (e) { e.preventDefault(); showView('policies'); });
 
   // ---------- Boot ----------
   renderPolicies();
-  var initial = (location.hash || '#install').slice(1);
+  var initial = (location.hash || '#firewall').slice(1);
   showView(views.indexOf(initial) !== -1 ? initial : 'install');
 
   // Expose a small API for the assessment module

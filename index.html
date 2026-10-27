@@ -25,12 +25,12 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="#install" id="nav-install" class="nav-link active">Extension</a>
-    <a href="#firewall" id="nav-firewall" class="nav-link">Firewall</a>
+    <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
     <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
     <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
     <a href="#dashboard" id="nav-dashboard" class="nav-link">Risk dashboard</a>
     <a href="#assessment" id="nav-assessment" class="nav-link nav-cta">Assessment</a>
+    <a href="#install" id="nav-install" class="nav-link">Extension</a>
   </nav>
 </header>
 
@@ -42,10 +42,11 @@
 <main class="main">
 
   <!-- FIREWALL -->
-  <section id="view-firewall" class="view">
+  <section id="view-firewall" class="view active">
     <div class="view-head">
       <h1>Inspect it before the model sees it.</h1>
       <p class="lede">Paste a prompt or attach files. Dato detects secrets, PII, financials, source code, and contract language on-device — then warns, redacts, or blocks according to your policy.</p>
+      <p class="posture-note">Want these checks inside ChatGPT, Claude, and Gemini? <a href="#install" id="goto-install">Get the Chrome extension</a>.</p>
     </div>
     <div class="console-grid">
       <div class="panel">
@@ -153,7 +154,7 @@
   </section>
 
   <!-- INSTALL -->
-  <section id="view-install" class="view active">
+  <section id="view-install" class="view">
     <div class="view-head">
       <h1>Put Dato in front of every AI tool.</h1>
       <p class="lede">The Chrome extension runs the same checks right inside ChatGPT, Claude, and Gemini, and stops the prompt before it sends. Everything stays on the computer. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
