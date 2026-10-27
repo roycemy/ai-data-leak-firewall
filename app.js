@@ -57,6 +57,7 @@
         attachedFiles.push({ name: f.name, text: String(reader.result || '') });
         addAttachmentChip(f.name, attachedFiles.length - 1);
         showFormError('');
+        markStaleIfChanged();
       };
       reader.onerror = function () { showFormError(f.name + ' could not be read as text. Try a text-based file.'); };
       reader.readAsText(f);
@@ -70,7 +71,7 @@
     if (idx != null) {
       var x = document.createElement('button');
       x.className = 'chip-x'; x.textContent = '×'; x.title = 'Remove file';
-      x.addEventListener('click', function () { attachedFiles[idx] = null; chip.remove(); });
+      x.addEventListener('click', function () { attachedFiles[idx] = null; chip.remove(); markStaleIfChanged(); });
       chip.appendChild(x);
     }
     document.getElementById('attachments').appendChild(chip);
@@ -84,7 +85,38 @@
     box.hidden = !msg;
     document.getElementById('prompt-input').classList.toggle('invalid', !!msg);
   }
-  document.getElementById('prompt-input').addEventListener('input', function () { showFormError(''); });
+  document.getElementById('prompt-input').addEventListener('input', function () { showFormError(''); markStaleIfChanged(); });
+
+  // ---------- Send is tied to the inspected text ----------
+  // inspectedText: the exact text the last Inspect ran on, or null if nothing
+  // current has been inspected. Read by the Send button; set by scanNow, cleared
+  // when the prompt or files change, and by Clear.
+  var inspectedText = null;
+
+  // Prompt box plus attached files, joined the same way every time.
+  function currentText() {
+    var parts = [];
+    var promptText = document.getElementById('prompt-input').value;
+    if (promptText.trim()) parts.push(promptText);
+    attachedFiles.forEach(function (f) { if (f) parts.push(f.text); });
+    return parts.join('\n\n');
+  }
+
+  // Send needs a fresh inspection: disable it and say why.
+  function requireInspection() {
+    inspectedText = null;
+    var sendBtn = document.getElementById('send-btn');
+    sendBtn.disabled = true;
+    sendBtn.textContent = 'Inspect first to send';
+  }
+
+  // Called when the prompt or files change after an inspection.
+  function markStaleIfChanged() {
+    if (inspectedText === null || currentText() === inspectedText) return;
+    requireInspection();
+    document.getElementById('scan-result').innerHTML =
+      '<div class="empty-state">You changed the prompt after it was inspected. Press <b>Inspect locally</b> to check the new text before sending.</div>';
+  }
 
   // ---------- Scanning ----------
   function severityRank(s) { return { critical: 4, high: 3, medium: 2, low: 1 }[s] || 0; }
@@ -130,11 +162,13 @@
     if (!parts.length) {
       resultBox.innerHTML = EMPTY_RESULT;
       showFormError('Nothing to inspect yet. Paste a prompt or attach a file first.');
+      requireInspection();
       document.getElementById('prompt-input').focus();
       return null;
     }
     showFormError('');
     var combined = parts.map(function (p) { return p.text; }).join('\n\n');
+    inspectedText = combined; // Send is allowed only while the text still equals this
     var scan = D.scan(combined);
     var findings = scan.findings;
     var action = evaluate(findings);
@@ -227,6 +261,12 @@
   document.getElementById('send-btn').addEventListener('click', function () {
     var btn = this;
     if (btn.disabled) return;
+    // The button is disabled when the text is stale, but check the rule itself too.
+    if (inspectedText === null || currentText() !== inspectedText) {
+      requireInspection();
+      showFormError('The prompt changed since it was inspected. Inspect it again before sending.');
+      return;
+    }
     btn.textContent = '✓ Sent (simulated) — no data left this device';
     logEvent('simulated-send', [], 'sent-' + (btn.dataset.mode || 'send'));
     setTimeout(function () { scanNow(); }, 1600);
@@ -237,9 +277,8 @@
     document.getElementById('attachments').innerHTML = '';
     document.getElementById('scan-result').innerHTML = EMPTY_RESULT;
     showFormError('');
-    var sendBtn = document.getElementById('send-btn');
-    sendBtn.disabled = false; sendBtn.textContent = 'Send to AI (simulated)';
-    sendBtn.dataset.mode = 'send';
+    requireInspection();
+    document.getElementById('send-btn').dataset.mode = 'send';
   }
   document.getElementById('clear-btn').addEventListener('click', clearConsole);
   // Keyboard: Ctrl/Cmd + Enter inspects, from anywhere in the prompt box
