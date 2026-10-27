@@ -416,13 +416,13 @@
     var pB = blocked / total * 100, pW = warned / total * 100, pR = redacted / total * 100;
     var donut = document.getElementById('action-donut');
     donut.style.background = 'conic-gradient(' +
-      '#ff4d5e 0 ' + pB + '%,' +
-      '#ffb020 ' + pB + '% ' + (pB + pW) + '%,' +
-      '#7c5cff ' + (pB + pW) + '% ' + (pB + pW + pR) + '%,' +
-      '#2de2c5 ' + (pB + pW + pR) + '% 100%)';
+      '#A3231B 0 ' + pB + '%,' +
+      '#C98A12 ' + pB + '% ' + (pB + pW) + '%,' +
+      '#2F5BFF ' + (pB + pW) + '% ' + (pB + pW + pR) + '%,' +
+      '#1E6B3A ' + (pB + pW + pR) + '% 100%)';
     document.getElementById('donut-legend').innerHTML =
-      legendDot('#ff4d5e', 'Blocked', blocked) + legendDot('#ffb020', 'Warned', warned) +
-      legendDot('#7c5cff', 'Redacted', redacted) + legendDot('#2de2c5', 'Clean', clean);
+      legendDot('#A3231B', 'Blocked', blocked) + legendDot('#C98A12', 'Warned', warned) +
+      legendDot('#2F5BFF', 'Redacted', redacted) + legendDot('#1E6B3A', 'Clean', clean);
 
     // 7-day activity
     var days = [];
