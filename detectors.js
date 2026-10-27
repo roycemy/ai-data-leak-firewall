@@ -42,6 +42,20 @@
       pattern: /(?:password|passwd|pwd|api[_-]?key|api[_-]?secret|secret[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)["'\s]*[:=]["'\s]*["'][^"'\s]{8,}["']/gi },
     { id: 'basic-auth-url', category: 'secrets', severity: 'high', label: 'Credentials in URL',
       pattern: /https?:\/\/[^/\s:@]+:[^/\s@]+@[^/\s]+/gi },
+    // "my password is hunter2": a credential said in plain words. Ordinary sentences
+    // like "the password is required" must not match, so the value is checked below.
+    { id: 'credential-named', category: 'secrets', severity: 'high', label: 'Credential stated in plain language',
+      detect: function (text) {
+        var out = [];
+        var re = /\b(?:password|passcode|passphrase|api[ _-]?key|secret[ _-]?key|access[ _-]?token|auth[ _-]?token|private[ _-]?key|pin)\s*(?:is|=|:)\s*([^\s,;]{3,})/gi, m;
+        while ((m = re.exec(text)) !== null) {
+          var value = m[1].replace(/[.!?]+$/, '');
+          var isPlainWord = /^[A-Za-z]+$/.test(value);
+          if (isPlainWord && (value.length < 6 || ORDINARY_WORDS.test(value))) continue;
+          out.push({ index: m.index, match: m[0] });
+        }
+        return out;
+      } },
 
     // ---- PII ----
     { id: 'ssn', category: 'pii', severity: 'critical', label: 'US Social Security number',
@@ -83,6 +97,9 @@
   ];
 
   // Heuristic category detectors (no single span; report whole-region findings)
+  // Words that follow "password is" in everyday sentences. They are not passwords.
+  var ORDINARY_WORDS = /^(?:required|requires|needed|missing|incorrect|invalid|wrong|expired|changed|reset|stored|hashed|encrypted|optional|empty|blank|correct|secure|strong|weak|longer|shorter|different|protected|saved|visible|hidden|enabled|disabled|something|anything|nothing|forgotten|sensitive|private|unknown|generated|shared|working|accepted|rejected)$/i;
+
   function detectSourceCode(text) {
     var signals = 0;
     var lines = text.split('\n');
@@ -103,15 +120,18 @@
   }
 
   function detectContract(text) {
-    var terms = ['non-disclosure', 'nda', 'hereinafter', 'indemnif', 'governing law', 'confidentiality',
-      'party of the first part', 'terms and conditions', 'termination clause', 'liability',
-      'agreement is entered', 'in witness whereof', 'force majeure', 'arbitration', 'severability'];
+    // Whole-word patterns. The old substring test for "nda" also matched "Monday" and "agenda".
+    var terms = [/\bnon-disclosure\b/i, /\bNDA\b/, /\bhereinafter\b/i, /\bindemnif/i, /\bgoverning law\b/i,
+      /\bconfidentiality\b/i, /\bparty of the first part\b/i, /\bterms and conditions\b/i,
+      /\btermination clause\b/i, /\bliability\b/i, /\bagreement is entered\b/i, /\bin witness whereof\b/i,
+      /\bforce majeure\b/i, /\barbitration\b/i, /\bseverability\b/i];
     var lower = text.toLowerCase();
     var hits = [];
     for (var i = 0; i < terms.length; i++) {
-      var idx = lower.indexOf(terms[i]);
-      if (idx !== -1) hits.push(idx);
+      var found = terms[i].exec(text);
+      if (found) hits.push(found.index);
     }
+    hits.sort(function (a, b) { return a - b; });
     if (hits.length >= 2 || (hits.length >= 1 && /\b(agreement|contract|party|parties)\b/i.test(text) && hits.length >= 1 && lower.split('agreement').length > 3)) {
       return [{ index: hits[0], match: text.slice(hits[0], hits[0] + 120) + '…', heuristic: true }];
     }
