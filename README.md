@@ -67,7 +67,10 @@ The detector tests use Node's built-in test runner, so there is nothing to insta
 
 ```bash
 node --test tests/detectors.test.js
+node --test tests/zip.test.js
 ```
+
+The second one checks that the download is a real ZIP file.
 
 ## Architecture
 
@@ -81,6 +84,7 @@ node --test tests/detectors.test.js
 | `styles.css` | Brand and component system |
 | `extension/` | Chrome extension (Manifest V3) for ChatGPT, Claude, and Gemini |
 | `dato-extension.zip` | Zipped copy of `extension/` for the download button |
+| `tools/build-zip.py` | Rebuilds `dato-extension.zip` as a real ZIP (`python tools/build-zip.py`) |
 
 State lives in `app.js`: `policies` (object, class to action), `events` (audit log array), `attachedFiles`, and `inspectedText` (the exact text the last Inspect ran on, which Send must still match). Policies and events are saved to `localStorage`; clearing site data or pressing Reset everything wipes them. Planning docs: [PROPOSAL.md](PROPOSAL.md), [PRD.md](PRD.md), [DESIGN.md](DESIGN.md), [AGENTS.md](AGENTS.md).
 
@@ -94,6 +98,7 @@ The first submission is commit `03cb8bf`. These changes were made afterwards by 
 | `4f59de5` | Send only works on the exact text that was inspected |
 | `8c786d6` | The site opens on the Firewall tab; the Extension tab moved to the end |
 | `366f6c3` | Keyboard focus rings, skip link, `aria-current` / `aria-pressed`, reduced-motion support |
+| (this fix) | `dato-extension.zip` was really a tar archive with a `.zip` name, so Windows could not extract it. It is now a real ZIP, with a test |
 | `2e59d21`, `acceebe` | Detector tests with Node's built-in runner |
 | `dfe919e`, then the restyle commit | New look (warm white, black text, cobalt). `DESIGN.md` was updated first, then `styles.css`; layout and behaviour are unchanged |
 
