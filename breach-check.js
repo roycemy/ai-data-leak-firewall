@@ -87,6 +87,10 @@
       // A 404, 429 or 503 is still "an answer", so fetch does NOT throw.
       // response.ok is true only for status 200-299, so check it ourselves.
       if (!response.ok) {
+        // 429 = "Too Many Requests": the API's rate limit. Say what to do about it.
+        if (response.status === 429) {
+          return { ok: false, error: 'too many checks, wait a few seconds and try again' };
+        }
         return { ok: false, error: 'Have I Been Pwned answered with status ' + response.status };
       }
 

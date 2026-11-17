@@ -80,6 +80,12 @@ test('checkPassword treats a non-OK status as an error, not a result', () =>
     assert.match(r.error, /503/);
   }));
 
+test('checkPassword explains a 429 rate limit in plain words', () =>
+  withFetch(async () => ({ ok: false, status: 429, text: async () => '' }), async () => {
+    assert.deepStrictEqual(await B.checkPassword(WORD),
+      { ok: false, error: 'too many checks, wait a few seconds and try again' });
+  }));
+
 test('checkPassword turns a network failure into an error instead of throwing', () =>
   withFetch(async () => { throw new TypeError('Failed to fetch'); }, async () => {
     const r = await B.checkPassword(WORD);
