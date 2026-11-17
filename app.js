@@ -553,7 +553,14 @@
     document.getElementById('view-dashboard').classList.toggle('is-empty', empty);
     document.getElementById('dash-empty').hidden = !empty;
     document.getElementById('dash-content').hidden = empty;
+    var line = document.getElementById('status-line');
+    line.hidden = empty;
     if (empty) return;
+
+    // One line that answers "is it working, and does anything need me?"
+    var st = DB.status(events, Date.now());
+    line.className = 'status-line status-' + st.kind;
+    line.textContent = st.text;
 
     // Activity over the last 14 days. With activity on fewer than 3 days, a 14-day chart
     // is mostly empty, so show the last 7 days and say the chart fills in over time.
@@ -629,7 +636,9 @@
   // ---------- Boot ----------
   document.getElementById('scan-result').innerHTML = EMPTY_RESULT;
   renderPolicies();
-  var initial = (location.hash || '#firewall').slice(1);
+  // Home is the Dashboard once there is something to report; before the first
+  // inspection the app opens on the Firewall, where there is something to do.
+  var initial = (location.hash || (events.length ? '#dashboard' : '#firewall')).slice(1);
   showView(views.indexOf(initial) !== -1 ? initial : 'install');
 
   // Expose a small API for the assessment module

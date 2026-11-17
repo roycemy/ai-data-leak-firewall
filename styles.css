@@ -305,8 +305,10 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 @media (prefers-reduced-motion: reduce) { .finding-breach.breach-loading::before { display: none; } }
 
 /* ---- Dashboard ---- */
-.scope-note { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; line-height: 20px; color: var(--text-2); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; }
-.scope-note .dot { background: var(--ok); }
+.status-line { margin-top: 8px; font-size: 16px; line-height: 24px; font-weight: 600; }
+.status-line[hidden] { display: none; }
+.status-critical { color: var(--critical); }
+.status-ok { color: var(--ok); }
 .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .stat-card { padding: 20px 24px; }
 .stat-num { font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; margin-top: 8px; }
@@ -325,8 +327,10 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .key + .key, .legend-inline .key-flag { margin-left: 8px; }
 .key-all { background: #C9D2FF; }
 .key-flag { background: var(--accent); }
-.trend { position: relative; padding-left: 32px; }
-.trend-max { position: absolute; left: 0; top: -8px; font-size: 12px; line-height: 16px; color: var(--text-2); }
+.trend { padding-left: 32px; }
+.trend-plot { position: relative; }
+.trend-ticks { position: absolute; left: -32px; top: 0; bottom: 0; width: 24px; }
+.tick { position: absolute; right: 0; transform: translateY(-50%); font-size: 12px; line-height: 16px; color: var(--text-2); }
 .trend-svg { display: block; width: 100%; height: 160px; overflow: visible; }
 .trend-svg .bar-all { fill: #C9D2FF; }
 .trend-svg .bar-flag { fill: var(--accent); }

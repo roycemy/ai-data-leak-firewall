@@ -21,8 +21,8 @@
     </div>
   </div>
   <nav class="nav" aria-label="Sections">
-    <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
     <a href="#dashboard" id="nav-dashboard" class="nav-link">Dashboard</a>
+    <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
     <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
     <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
     <a href="#assessment" id="nav-assessment" class="nav-link">Assessment</a>
@@ -142,15 +142,15 @@
     <div class="view-head">
       <div>
         <h1 id="dash-title">Dashboard</h1>
-        <p class="lede">What AI Firewall caught and stopped in this browser.</p>
+        <p class="lede">What AI Firewall caught and stopped in this browser (data stays here).</p>
+        <p id="status-line" class="status-line" role="status" hidden></p>
       </div>
-      <p class="scope-note"><span class="dot" aria-hidden="true"></span>Data from this browser only</p>
     </div>
     <div class="stat-grid">
       <div class="card stat-card"><p class="caption">Inspections</p><p class="stat-num num" id="stat-scans">0</p><p class="stat-sub" id="stat-scans-sub"></p></div>
       <div class="card stat-card"><p class="caption">Flagged</p><p class="stat-num num" id="stat-flagged">0</p><p class="stat-sub" id="stat-flagged-sub"></p></div>
       <div class="card stat-card"><p class="caption">Blocked</p><p class="stat-num num" id="stat-blocked">0</p><p class="stat-sub" id="stat-blocked-sub"></p></div>
-      <div class="card stat-card"><p class="caption">Breached passwords</p><p class="stat-num num" id="stat-breached">0</p><p class="stat-sub" id="stat-breached-sub"></p></div>
+      <div class="card stat-card"><p class="caption">Password alerts</p><p class="stat-num num" id="stat-breached">0</p><p class="stat-sub" id="stat-breached-sub"></p></div>
     </div>
 
     <div id="dash-empty" class="card dash-empty" hidden>
@@ -166,7 +166,7 @@
       <section class="card" aria-labelledby="trend-title">
         <div class="card-head">
           <h2 class="card-title" id="trend-title">Activity</h2>
-          <p class="legend-inline"><span class="key key-all"></span>Inspections <span class="key key-flag"></span>Flagged <span class="muted" id="trend-range">· last 14 days</span></p>
+          <p class="legend-inline"><span class="key key-all"></span>Clean <span class="key key-flag"></span>Flagged <span class="muted" id="trend-range">· last 14 days</span></p>
         </div>
         <div id="trend"></div>
       </section>

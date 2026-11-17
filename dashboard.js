@@ -70,27 +70,49 @@
    * Each day is one bar: the full bar is all inspections, the dark part is the
    * ones that were flagged. The SVG uses a simple 0–100 coordinate system. */
   function trendChart(days) {
-    var max = Math.max(1, Math.max.apply(null, days.map(function (d) { return d.inspections; })));
+    var most = Math.max.apply(null, days.map(function (d) { return d.inspections; }));
+    var top = most <= 1 ? 1 : most + (most % 2);   // even, so the middle tick is a whole number
     var slot = 100 / days.length;              // width of each day's slot
     var barW = slot * 0.6;                     // bar takes 60% of its slot
     var bars = days.map(function (d, i) {
       var x = (i * slot + (slot - barW) / 2).toFixed(2);
-      var hAll = (d.inspections / max * 100).toFixed(2);
-      var hFlag = (d.flagged / max * 100).toFixed(2);
+      var hAll = (d.inspections / top * 100).toFixed(2);
+      var hFlag = (d.flagged / top * 100).toFixed(2);
       return '<rect class="bar-all" x="' + x + '" y="' + (100 - hAll) + '" width="' + barW.toFixed(2) + '" height="' + hAll + '"/>' +
         '<rect class="bar-flag" x="' + x + '" y="' + (100 - hFlag) + '" width="' + barW.toFixed(2) + '" height="' + hFlag + '"/>';
     }).join('');
     var total = days.reduce(function (s, d) { return s + d.inspections; }, 0);
     var flagged = days.reduce(function (s, d) { return s + d.flagged; }, 0);
     var mid = days[Math.floor(days.length / 2)];
+    // Y-axis labels: top, middle (only when it is a whole number) and 0.
+    var ticks = '<span class="tick" style="top:0%">' + top + '</span>' +
+      (top >= 2 ? '<span class="tick" style="top:50%">' + top / 2 + '</span>' : '') +
+      '<span class="tick" style="top:100%">0</span>';
     return '<div class="trend">' +
-      '<span class="trend-max num">' + max + '</span>' +
+      '<div class="trend-plot"><div class="trend-ticks num" aria-hidden="true">' + ticks + '</div>' +
       '<svg class="trend-svg" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="' +
         total + ' inspections and ' + flagged + ' flagged in the last ' + days.length + ' days">' +
         '<line class="grid" x1="0" y1="0" x2="100" y2="0"/><line class="grid" x1="0" y1="50" x2="100" y2="50"/>' +
-        '<line class="axis" x1="0" y1="100" x2="100" y2="100"/>' + bars + '</svg>' +
+        '<line class="axis" x1="0" y1="100" x2="100" y2="100"/>' + bars + '</svg></div>' +
       '<div class="trend-labels"><span>' + days[0].label + '</span><span>' + mid.label + '</span><span>Today</span></div>' +
       '</div>';
+  }
+
+  /* status(events, now) -> the one line under the Dashboard title:
+   * { kind: 'critical' | 'ok', text }, looking at the last 14 days. */
+  function status(events, now) {
+    var recent = events.filter(function (e) { return isScan(e) && e.ts > now - 14 * DAY; });
+    var breached = recent.filter(function (e) { return e.breached > 0; }).length;
+    if (breached) {
+      return { kind: 'critical', text: '◆ ' + (breached === 1
+        ? '1 prompt had a password found in known breaches. Change that password.'
+        : breached + ' prompts had passwords found in known breaches. Change those passwords.') };
+    }
+    var blocked = recent.filter(function (e) { return e.action === 'block'; }).length;
+    var text = blocked ? plural(blocked, 'risky prompt') + ' blocked in the last 14 days.'
+      : recent.length ? plural(recent.length, 'prompt') + ' checked in the last 14 days, none blocked.'
+      : 'No prompts checked in the last 14 days.';
+    return { kind: 'ok', text: '✓ Working. ' + text };
   }
 
   /* bars(rows, total) -> HTML horizontal bars. rows: [{ label, value, cls }] */
@@ -154,13 +176,14 @@
     return 'Not found in breaches (' + plural(e.breachChecked, 'password') + ')';
   }
 
-  /* timeAgo(ts, now) -> "just now", "5 min ago", "3 h ago", "2 d ago" */
+  /* timeAgo(ts, now) -> "just now", "5 min ago", "3 h ago", "Yesterday", "2 days ago" */
   function timeAgo(ts, now) {
     var s = Math.max(0, Math.round((now - ts) / 1000));
     if (s < 60) return 'just now';
     if (s < 3600) return Math.floor(s / 60) + ' min ago';
     if (s < DAY / 1000) return Math.floor(s / 3600) + ' h ago';
-    return Math.floor(s / (DAY / 1000)) + ' d ago';
+    var days = Math.floor(s / (DAY / 1000));
+    return days === 1 ? 'Yesterday' : days + ' days ago';
   }
 
   function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
@@ -169,6 +192,7 @@
     SEVERITIES: SEVERITIES,
     isScan: isScan,
     activeDays: activeDays,
+    status: status,
     summarize: summarize,
     dailyTrend: dailyTrend,
     trendChart: trendChart,

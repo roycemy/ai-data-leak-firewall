@@ -76,10 +76,25 @@ test('timeAgo is short and readable', () => {
   assert.strictEqual(DB.timeAgo(NOW - 5000, NOW), 'just now');
   assert.strictEqual(DB.timeAgo(NOW - 5 * 60000, NOW), '5 min ago');
   assert.strictEqual(DB.timeAgo(NOW - 3 * 3600000, NOW), '3 h ago');
-  assert.strictEqual(DB.timeAgo(NOW - 2 * DAY, NOW), '2 d ago');
+  assert.strictEqual(DB.timeAgo(NOW - 1 * DAY, NOW), 'Yesterday');
+  assert.strictEqual(DB.timeAgo(NOW - 2 * DAY, NOW), '2 days ago');
 });
 
 test('activeDays counts days with at least one inspection (the dashboard shows 7 days when it is under 3)', () => {
   assert.strictEqual(DB.activeDays(DB.dailyTrend(EVENTS, 14, NOW)), 2);
   assert.strictEqual(DB.activeDays(DB.dailyTrend([], 14, NOW)), 0);
+});
+
+test('trendChart labels the y axis with whole numbers and a 0 baseline', () => {
+  const html = DB.trendChart(DB.dailyTrend(EVENTS, 14, NOW)); // 3 on the busiest day -> top 4, middle 2
+  assert.deepStrictEqual([...html.matchAll(/class="tick"[^>]*>(\d+)</g)].map(m => m[1]), ['4', '2', '0']);
+});
+
+test('status: a breached password comes first; otherwise "Working" with blocks in the last 14 days', () => {
+  assert.deepStrictEqual(DB.status(EVENTS, NOW),
+    { kind: 'critical', text: '◆ 2 prompts had passwords found in known breaches. Change those passwords.' });
+  const noBreach = EVENTS.map(e => Object.assign({}, e, { breached: 0 }));
+  assert.deepStrictEqual(DB.status(noBreach, NOW), { kind: 'ok', text: '✓ Working. 2 risky prompts blocked in the last 14 days.' });
+  const old = noBreach.map(e => Object.assign({}, e, { ts: NOW - 20 * DAY }));
+  assert.strictEqual(DB.status(old, NOW).text, '✓ Working. No prompts checked in the last 14 days.');
 });
