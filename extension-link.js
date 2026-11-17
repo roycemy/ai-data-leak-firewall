@@ -82,9 +82,14 @@
     if (!isObject(data) || data.type !== MESSAGE_TYPE || data.v !== VERSION || !isObject(data.summary)) return null;
     var s = data.summary;
     if (!isCount(s.total) || !isCount(s.high) || s.high > s.total) return null;
-    if (!isCount(s.stoppedToday) || !isCount(s.stoppedWeek) || s.stoppedToday > s.stoppedWeek || s.stoppedWeek > s.total) return null;
+    /* Older 1.2.0 / 1.3.0 extensions omit these; treat a missing count as 0 so
+     * they still show Connected. Reject the message when a value is present but
+     * is not a whole number. */
+    var stoppedToday = s.stoppedToday === undefined ? 0 : s.stoppedToday;
+    var stoppedWeek = s.stoppedWeek === undefined ? 0 : s.stoppedWeek;
+    if (!isCount(stoppedToday) || !isCount(stoppedWeek) || stoppedToday > stoppedWeek || stoppedWeek > s.total) return null;
     if (s.lastAt !== null && !(typeof s.lastAt === 'number' && isFinite(s.lastAt) && s.lastAt > 0)) return null;
-    var out = { total: s.total, high: s.high, lastAt: s.lastAt, stoppedToday: s.stoppedToday, stoppedWeek: s.stoppedWeek };
+    var out = { total: s.total, high: s.high, lastAt: s.lastAt, stoppedToday: stoppedToday, stoppedWeek: stoppedWeek };
     for (var group in KEYS) {
       if (!isObject(s[group])) return null;
       out[group] = {};
