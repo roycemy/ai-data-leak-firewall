@@ -113,7 +113,7 @@ function show(action,findings,text,ed,trigger){close();current={action:action,fi
  document.body.appendChild(wrap);sentinel('alert',findings.length+' finding'+(findings.length===1?'':'s'));
  wrap.querySelector('[data-dato="cancel"]').addEventListener('click',cancel);
  var send=wrap.querySelector('[data-dato="send"]');if(send)send.addEventListener('click',function(){if(!send.dataset.armed){send.dataset.armed='1';send.textContent='Really send flagged data? Click again';setTimeout(function(){if(send.isConnected){delete send.dataset.armed;send.textContent='Send anyway'}},5000);return}record('override',current);close();resume(ed,text)});
- var redact=wrap.querySelector('[data-dato="redact"]');if(redact)redact.addEventListener('click',function(){var safe=D.redact(text,findings);record('redacted',current);setText(ed,safe);var now=textOf(ed).trim();close();if(now===safe.trim()||now.indexOf('[REDACTED')!==-1){setTimeout(function(){resume(ed,safe)},80)}});
+ var redact=wrap.querySelector('[data-dato="redact"]');if(redact)redact.addEventListener('click',function(){var safe=D.redact(text,findings);record('redacted',current);setText(ed,safe);var now=textOf(ed).trim();close();if(now===safe.trim()||now.indexOf('[REDACTED')!==-1){setTimeout(function(){resume(ed,now)},80)}});
  wrap.addEventListener('click',function(x){if(x.target===wrap)cancel()});document.addEventListener('keydown',escapeOnce,true)
 }
 // Going back, Escape and clicking outside all mean the prompt was stopped and nothing was sent.
