@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dato — AI Data-Leak Firewall</title>
-<meta name="description" content="Dato inspects prompts and files locally and stops confidential data before it reaches AI tools. Defensive, local-first, audit-ready.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%232F5BFF'/><text x='50' y='69' font-family='system-ui,sans-serif' font-size='58' font-weight='800' text-anchor='middle' fill='white'>D</text></svg>">
+<title>AI Firewall — stop data leaks into AI tools</title>
+<meta name="description" content="AI Firewall inspects prompts and files locally and stops confidential data before it reaches AI tools. Defensive, local-first, audit-ready.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%232F5BFF'/><text x='50' y='69' font-family='system-ui,sans-serif' font-size='58' font-weight='800' text-anchor='middle' fill='white'>A</text></svg>">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -14,10 +14,10 @@
 
 <header class="topbar">
   <div class="brand">
-    <span class="brand-mark" aria-hidden="true">D</span>
+    <span class="brand-mark" aria-hidden="true">A</span>
     <div>
-      <div class="brand-name">Dato</div>
-      <div class="brand-tag">AI data-leak firewall</div>
+      <div class="brand-name">AI Firewall</div>
+      <div class="brand-tag">Stops data leaks into AI tools</div>
     </div>
   </div>
   <nav class="nav">
@@ -32,7 +32,7 @@
 
 <div class="safety-strip">
   <span class="pulse-dot"></span>
-  Defensive security tool — every scan runs locally in your browser. No prompt, file, or event is transmitted. Assessment mode uses synthetic data only.
+  Defensive security tool — every scan runs locally in your browser. No prompt, file, or event is transmitted. The optional breach check sends only a 5-character hash prefix. Assessment mode uses synthetic data only.
 </div>
 
 <main class="main" id="main" tabindex="-1">
@@ -41,7 +41,7 @@
   <section id="view-firewall" class="view active">
     <div class="view-head">
       <h1>Inspect it before the model sees it.</h1>
-      <p class="lede">Paste a prompt or attach files. Dato detects secrets, PII, financials, source code, and contract language on-device — then warns, redacts, or blocks according to your policy.</p>
+      <p class="lede">Paste a prompt or attach files. AI Firewall detects secrets, PII, financials, source code, and contract language on-device — then warns, redacts, or blocks according to your policy.</p>
       <p class="posture-note">Want these checks inside ChatGPT, Claude, and Gemini? <a href="#install" id="goto-install">Get the Chrome extension</a>.</p>
     </div>
     <div class="console-grid">
@@ -161,25 +161,25 @@
   <!-- INSTALL -->
   <section id="view-install" class="view">
     <div class="view-head">
-      <h1>Put Dato in front of every AI tool.</h1>
+      <h1>Put AI Firewall in front of every AI tool.</h1>
       <p class="lede">The Chrome extension runs the same checks right inside ChatGPT, Claude, and Gemini, and stops the prompt before it sends. Everything stays on the computer. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
     </div>
     <div class="console-grid">
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Install in Chrome</span><span class="local-badge">free · local only</span></div>
-        <p><a class="btn btn-primary" href="dato-extension.zip" download>Download Dato for Chrome</a></p>
+        <p><a class="btn btn-primary" href="dato-extension.zip" download>Download the Chrome extension</a></p>
         <ol class="install-steps">
           <li>Unzip <code>dato-extension.zip</code>. You get a folder called <code>extension</code>.</li>
           <li>In Chrome, go to <code>chrome://extensions</code>.</li>
           <li>Turn on <b>Developer mode</b> in the top-right corner.</li>
           <li>Click <b>Load unpacked</b> and choose the <code>extension</code> folder.</li>
-          <li>Pin Dato from the Extensions menu, then open ChatGPT, Claude, or Gemini and look for <b>Dato · Protected locally</b>.</li>
+          <li>Pin it from the Extensions menu (the extension still uses its earlier name, Dato), then open ChatGPT, Claude, or Gemini and look for <b>Dato · Protected locally</b>.</li>
         </ol>
-        <p class="posture-note">Keep the folder on your computer. Chrome runs Dato from it.</p>
+        <p class="posture-note">Keep the folder on your computer. Chrome runs the extension from it.</p>
       </div>
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Quick test</span></div>
-        <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. Dato should stop it before it sends.</p>
+        <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. The extension should stop it before it sends.</p>
         <pre class="install-sample">Summarize this fake deployment note:
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 Customer email: dana@example.com
@@ -202,8 +202,8 @@ Test card: 4111 1111 1111 1111</pre>
 </main>
 
 <footer class="footer">
-  <span>Dato · local-first AI data-leak protection</span>
-  <span class="footer-note">Demo build — defensive use only. Detection runs entirely in the browser.</span>
+  <span>AI Firewall · local-first AI data-leak protection</span>
+  <span class="footer-note">Demo build — defensive use only. Detection runs entirely in the browser. Breach data: <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a>.</span>
 </footer>
 
 <script src="detectors.js"></script>

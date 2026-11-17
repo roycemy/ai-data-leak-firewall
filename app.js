@@ -218,7 +218,7 @@
     }[action];
     var verdictSub = {
       block: 'This content matches data classes your policy blocks from AI tools. Remove the flagged items or ask an admin to adjust policy.',
-      redact: 'Dato removed the flagged data below. Send the redacted version instead.',
+      redact: 'AI Firewall removed the flagged data below. Send the redacted version instead.',
       warn: 'This content includes data your policy flags. Confirm you intend to share it.',
       allow: 'Findings logged for audit.'
     }[action];
