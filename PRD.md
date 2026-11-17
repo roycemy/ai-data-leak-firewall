@@ -18,7 +18,7 @@ Someone who pastes work text into AI tools: an employee, or the security person 
 
 ## Worked-out output
 - Breach count per detected password, from the Pwned Passwords range response (see below). A password found at least once is "found in breaches" (the string is in breach data; it does not mean the user's account was breached): its finding is raised to critical and tagged, and the event's `breached` count goes up.
-- Audit events gain two numbers when the breach check ran: `breachChecked` (passwords checked) and `breached` (passwords found in breaches), plus `breachError: true` when the check could not run. Counts only: never the password, the hash or the prefix.
+- Audit events gain two numbers when the breach check ran: `breachChecked` (passwords checked) and `breached` (passwords found in breaches), plus `breachRan: true` with `breachChecked: 0` when the box was on but there was no password, and `breachError: true` when the check could not run. The log's Breach check column shows "—" (box off), "no password", "✓ 0 of N", "N of M found" or "unavailable". Counts only: never the password, the hash or the prefix.
 - Findings per class, from `DatoDetect.scan`.
 - Governing action: the strictest policy among the findings (block > redact > warn > allow).
 - Redacted copy of the text.

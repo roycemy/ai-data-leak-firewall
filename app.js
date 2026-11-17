@@ -300,6 +300,7 @@
 
     var found = B.passwordsFrom(combined, findings);
     if (!found.length) {
+      event.breachRan = true; event.breachChecked = 0; saveEvents(); // log: "no password", not "off"
       showBreachNote('muted', 'No passwords found, so nothing was sent to Have I Been Pwned.');
       return;
     }
@@ -442,8 +443,9 @@
   // What the log shows for the breach check: counts only, never the password.
   function breachCell(e) {
     if (e.breachError) return '<span class="muted">unavailable</span>';
-    if (!e.breachChecked) return '—';
-    if (e.breached) return '<span class="breach-tag">' + e.breached + ' of ' + e.breachChecked + ' breached</span>';
+    if (e.breachRan && !e.breachChecked) return '<span class="muted">no password</span>';
+    if (!e.breachChecked) return '—'; // the box was off
+    if (e.breached) return '<span class="breach-tag">' + e.breached + ' of ' + e.breachChecked + ' found</span>';
     return '✓ 0 of ' + e.breachChecked;
   }
   document.getElementById('activity-filter').addEventListener('change', renderActivity);
