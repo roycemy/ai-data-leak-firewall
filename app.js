@@ -456,7 +456,7 @@
   }
   // What the log shows for the breach check: counts only, never the password.
   function breachCell(e) {
-    if (e.breachError) return '<span class="muted">unavailable</span>';
+    if (e.breachError) return '<span class="muted">check failed</span>';
     if (e.breachRan && !e.breachChecked) return '<span class="muted">no password</span>';
     if (!e.breachChecked) return '—'; // the box was off
     if (e.breached) return '<span class="breach-tag">' + e.breached + ' of ' + e.breachChecked + ' found</span>';
