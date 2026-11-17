@@ -640,6 +640,7 @@
     badge.className = 'badge badge-info';
     badge.innerHTML = SHIELD_ICON + 'Connected';
     document.getElementById('get-extension').hidden = connected;
+    document.getElementById('hero-actions').hidden = connected;
   }
 
   // Reads: events, extSummary, extRecent. Changes: the Dashboard view only.
@@ -648,11 +649,15 @@
     var s = DB.summarize(events, Object.keys(cats));
     var extFlagged = extSummary ? extSummary.total : 0;
     var extBlocked = extSummary ? extSummary.byAction.block : 0;
+    var sent = DB.sentAnyway(events, extSummary);
+    var flagged = s.flagged + extFlagged;
+    var blocked = s.blocked + extBlocked;
     var now = Date.now();
     var dayStart = DB.startOfDay(now);
     var weekStart = dayStart - (DB.WEEK - 86400000);
+    var connected = !!extSummary;
     var hero = DB.hero({
-      connected: !!extSummary,
+      connected: connected,
       stopsToday: DB.stops(events, extRecent, dayStart, now + 1),
       stopsWeek: DB.stops(events, extRecent, weekStart, now + 1)
     });
@@ -661,22 +666,37 @@
     heroEl.className = 'hero-status hero-' + hero.kind;
     renderConnectedBadge();
 
+    var lede = document.getElementById('dash-lede');
+    lede.textContent = connected
+      ? 'What AI Firewall caught and stopped in this browser (data stays here).'
+      : 'It watches ChatGPT, Claude and Gemini and stops secrets before they\'re sent. Nothing leaves your browser.';
+
     var alert = DB.passwordAlert(events);
     var alertEl = document.getElementById('password-alert');
     if (alert) { alertEl.hidden = false; alertEl.textContent = alert.text; }
     else { alertEl.hidden = true; alertEl.textContent = ''; }
 
-    document.getElementById('stat-flagged').textContent = s.flagged + extFlagged;
-    document.getElementById('stat-blocked').textContent = s.blocked + extBlocked;
-    document.getElementById('stat-sent').textContent = DB.sentAnyway(events, extSummary);
+    var hasStats = connected || flagged > 0 || blocked > 0 || sent > 0;
+    document.getElementById('dash-stats').hidden = !hasStats;
+    document.getElementById('stat-flagged').textContent = flagged;
+    document.getElementById('stat-blocked').textContent = blocked;
+    document.getElementById('stat-sent').textContent = sent;
 
+    document.getElementById('dash-install-steps').hidden = connected;
+
+    var catches = DB.mergeCatches(events, extRecent, cats, 8);
     var nowText = now;
-    document.getElementById('recent-catches').innerHTML = DB.mergeCatches(events, extRecent, cats, 8).map(function (c) {
+    document.getElementById('recent-catches').innerHTML = catches.map(function (c) {
       var site = c.source === 'extension' ? EXT.siteName(c.site) : c.site;
-      return '<li class="catch-row"><span class="catch-label">' + escapeHTML(c.label) + '</span>' +
-        ' · ' + escapeHTML(c.outcome) + ' · ' + escapeHTML(site) + ' · ' +
-        '<time datetime="' + new Date(c.time).toISOString() + '">' + DB.timeAgo(c.time, nowText) + '</time></li>';
+      var o = DB.catchOutcome(c.outcome);
+      return '<li class="catch-row"><div class="catch-main">' +
+        '<span class="catch-label">' + escapeHTML(c.label) + '</span>' +
+        '<span class="catch-meta">' + escapeHTML(site) + ' · <time datetime="' +
+        new Date(c.time).toISOString() + '">' + DB.timeAgo(c.time, nowText) + '</time></span></div>' +
+        '<span class="badge ' + o.cls + '"><span class="dot" aria-hidden="true"></span>' + escapeHTML(o.word) + '</span></li>';
     }).join('');
+    document.getElementById('catches-card').hidden = catches.length === 0;
+    document.getElementById('catches-empty').hidden = !(connected && catches.length === 0);
   }
 
   document.getElementById('see-all').addEventListener('click', function () {

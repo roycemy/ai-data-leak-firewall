@@ -109,7 +109,7 @@ test('hero: install CTA when the extension is not connected; Working when it is'
   assert.deepStrictEqual(DB.hero({ connected: true, stopsToday: 0, stopsWeek: 4 }),
     { kind: 'ok', text: 'Working. 4 risky prompts stopped this week' });
   assert.deepStrictEqual(DB.hero({ connected: true, stopsToday: 0, stopsWeek: 0 }),
-    { kind: 'ok', text: 'Working. Nothing risky yet' });
+    { kind: 'ok', text: 'Working. Nothing risky yet today' });
 });
 
 test('passwordAlert is a red line only when a breached password was found', () => {
@@ -135,4 +135,10 @@ test('mergeCatches is newest first, capped, and uses labels not prompt text', ()
   assert.strictEqual(rows[0].site, 'chatgpt.com');
   assert.ok(rows.every(r => !('prompt' in r) && !('value' in r)));
   assert.ok(rows.length <= 8);
+});
+
+test('catchOutcome: Stopped is red, Removed is cobalt, Sent anyway is amber', () => {
+  assert.deepStrictEqual(DB.catchOutcome('stopped'), { word: 'Stopped', cls: 'badge-critical' });
+  assert.deepStrictEqual(DB.catchOutcome('redacted'), { word: 'Removed', cls: 'badge-info' });
+  assert.deepStrictEqual(DB.catchOutcome('sent anyway'), { word: 'Sent anyway', cls: 'badge-high' });
 });

@@ -37,26 +37,35 @@
         <p id="hero-status" class="hero-status">Install the extension to start protecting your AI chats</p>
         <span class="badge badge-info" id="ext-status" hidden><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Connected</span>
       </div>
-      <p class="lede">What AI Firewall caught and stopped in this browser (data stays here).</p>
+      <p class="lede" id="dash-lede">It watches ChatGPT, Claude and Gemini and stops secrets before they're sent. Nothing leaves your browser.</p>
       <p id="password-alert" class="status-line status-critical" role="status" hidden></p>
-      <p class="hero-actions">
+      <p class="hero-actions" id="hero-actions">
         <a href="#setup" id="get-extension" class="btn btn-primary">Get the extension</a>
       </p>
+      <ol class="dash-install-steps" id="dash-install-steps">
+        <li>Download <a href="ai-firewall-extension.zip" download>ai-firewall-extension.zip</a>.</li>
+        <li>Extract the zip. You get a folder with <code>manifest.json</code> at the top.</li>
+        <li>In Chrome or Edge, turn on Developer mode and choose <b>Load unpacked</b> on that folder.</li>
+      </ol>
     </div>
 
-    <div class="stat-grid stat-grid-3">
-      <div class="card stat-card"><p class="caption">Flagged</p><p class="stat-num num" id="stat-flagged">0</p></div>
-      <div class="card stat-card"><p class="caption">Blocked</p><p class="stat-num num" id="stat-blocked">0</p></div>
-      <div class="card stat-card"><p class="caption">Sent anyway</p><p class="stat-num num" id="stat-sent">0</p></div>
+    <div id="dash-stats" hidden>
+      <p class="caption stat-eyebrow" id="stat-period">All time</p>
+      <div class="stat-grid stat-grid-3">
+        <div class="card stat-card"><p class="caption">Flagged</p><p class="stat-num num" id="stat-flagged">0</p></div>
+        <div class="card stat-card"><p class="caption">Blocked</p><p class="stat-num num" id="stat-blocked">0</p></div>
+        <div class="card stat-card"><p class="caption">Sent anyway</p><p class="stat-num num" id="stat-sent">0</p></div>
+      </div>
     </div>
 
-    <section class="card catches-card" aria-labelledby="catches-title">
+    <section class="card catches-card" id="catches-card" aria-labelledby="catches-title" hidden>
       <div class="card-head">
         <h2 class="card-title" id="catches-title">Recent catches</h2>
         <button type="button" id="see-all" class="link-quiet" aria-expanded="false" aria-controls="view-activity">See all</button>
       </div>
       <ul id="recent-catches" class="catch-list"></ul>
     </section>
+    <p class="catches-empty" id="catches-empty" hidden>Try it: paste a fake key into ChatGPT, it'll show up here.</p>
 
     <section id="view-activity" class="card audit-card" hidden>
       <div class="card-head">

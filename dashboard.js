@@ -242,7 +242,7 @@
     if (opts.stopsWeek > 0) {
       return { kind: 'ok', text: 'Working. ' + plural(opts.stopsWeek, 'risky prompt') + ' stopped this week' };
     }
-    return { kind: 'ok', text: 'Working. Nothing risky yet' };
+    return { kind: 'ok', text: 'Working. Nothing risky yet today' };
   }
 
   /* passwordAlert(events) -> a red status line when any inspection found a
@@ -271,6 +271,21 @@
     var found = Object.keys(categories || {}).filter(function (c) { return e.byCategory && e.byCategory[c] > 0; });
     if (!found.length) return e.total ? 'Confidential data' : 'No sensitive data';
     return categories[found[0]].label;
+  }
+
+  /* catchOutcome(outcome) -> { word, cls } for the Recent catches pill.
+   * "redacted" is shown as "Removed" (cobalt). Stopped is red, Sent anyway is amber. */
+  function catchOutcome(outcome) {
+    var map = {
+      stopped: { word: 'Stopped', cls: 'badge-critical' },
+      redacted: { word: 'Removed', cls: 'badge-info' },
+      removed: { word: 'Removed', cls: 'badge-info' },
+      'sent anyway': { word: 'Sent anyway', cls: 'badge-high' },
+      warned: { word: 'Warned', cls: 'badge-high' },
+      allowed: { word: 'Allowed', cls: 'badge-ok' },
+      clean: { word: 'Clean', cls: 'badge-ok' }
+    };
+    return map[outcome] || { word: String(outcome || ''), cls: 'badge-low' };
   }
 
   /* websiteCatch(e, categories) -> { label, outcome, site, time } or null (policy/clean skipped for Recent catches). */
@@ -315,6 +330,7 @@
     passwordAlert: passwordAlert,
     sentAnyway: sentAnyway,
     catchLabel: catchLabel,
+    catchOutcome: catchOutcome,
     websiteCatch: websiteCatch,
     mergeCatches: mergeCatches,
     WEEK: WEEK
