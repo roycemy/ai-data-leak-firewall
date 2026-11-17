@@ -114,10 +114,22 @@
     return 'Confidential data';
   }
 
-  /* summarize(events) -> counts only. Unknown labels are dropped, not passed on. */
-  function summarize(events) {
+  var DAY = 86400000;
+  function startOfDay(t) {
+    var d = new Date(t);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  /* summarize(events, now) -> counts only, including all stopped prompts today
+   * and this week (not limited to the capped recent list). now is optional. */
+  function summarize(events, now) {
+    now = Number(now);
+    if (!isFinite(now) || now <= 0) now = Date.now();
+    var dayStart = startOfDay(now);
+    var weekStart = dayStart - 6 * DAY;
     var s = {
-      total: 0, high: 0, lastAt: null,
+      total: 0, high: 0, lastAt: null, stoppedToday: 0, stoppedWeek: 0,
       byAction: zeros(ACTIONS), byOutcome: zeros(OUTCOMES), byCategory: zeros(CATEGORIES),
       bySite: zeros(SITES), bySeverity: zeros(SEVERITIES)
     };
@@ -132,6 +144,10 @@
       CATEGORIES.forEach(function (c) { s.byCategory[c] += count(e.categories && e.categories[c]); });
       var t = Number(e.t);
       if (isFinite(t) && t > 0 && (s.lastAt === null || t > s.lastAt)) s.lastAt = t;
+      if (e.outcome === 'cancelled' && isFinite(t) && t > 0) {
+        if (t >= dayStart && t <= now) s.stoppedToday++;
+        if (t >= weekStart && t <= now) s.stoppedWeek++;
+      }
     });
     return s;
   }
@@ -151,8 +167,8 @@
     return list.slice(0, RECENT_MAX);
   }
 
-  function message(events) {
-    return { type: MESSAGE_TYPE, v: VERSION, summary: summarize(events), recent: recent(events) };
+  function message(events, now) {
+    return { type: MESSAGE_TYPE, v: VERSION, summary: summarize(events, now), recent: recent(events) };
   }
 
   var api = {

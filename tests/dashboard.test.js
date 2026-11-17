@@ -119,13 +119,27 @@ test('passwordAlert is a red line only when a breached password was found', () =
     { kind: 'critical', text: '◆ 2 prompts had passwords found in known breaches. Change those passwords.' });
 });
 
-test('stops counts website blocks and extension "stopped" outcomes together', () => {
-  const ext = [
-    { label: 'AWS access key', outcome: 'stopped', site: 'chatgpt.com', time: NOW },
-    { label: 'Email address', outcome: 'sent anyway', site: 'claude.ai', time: NOW }
-  ];
-  assert.strictEqual(DB.stops(EVENTS, ext, NOW - DAY, NOW + 1), 3); // 2 website blocks + 1 extension stop
+test('stops adds the extension summary count on top of website blocks, even when recent is capped at 40', () => {
+  assert.strictEqual(DB.stops(EVENTS, 1, NOW - DAY, NOW + 1), 3); // 2 website blocks + 1 from the extension
+  assert.strictEqual(DB.stops(EVENTS, 50, NOW - DAY, NOW + 1), 52);
+  assert.strictEqual(DB.stops(EVENTS, 0, NOW - DAY, NOW + 1), 2);
   assert.strictEqual(DB.sentAnyway(EVENTS, { byOutcome: { override: 2, allowed: 1 } }), 1 + 3);
+});
+
+test('canonicalHash maps old hashes and unknown values, and only unknown/alias hashes are replaced', () => {
+  assert.strictEqual(DB.canonicalHash('firewall'), 'try');
+  assert.strictEqual(DB.canonicalHash('policies'), 'setup');
+  assert.strictEqual(DB.canonicalHash('extension'), 'setup');
+  assert.strictEqual(DB.canonicalHash('install'), 'setup');
+  assert.strictEqual(DB.canonicalHash('audit'), 'audit');
+  assert.strictEqual(DB.canonicalHash('activity'), 'activity');
+  assert.strictEqual(DB.canonicalHash('assessment'), 'assessment');
+  assert.strictEqual(DB.canonicalHash('not-a-tab'), 'dashboard');
+  assert.ok(DB.shouldReplaceHash('not-a-tab', 'dashboard'));
+  assert.ok(DB.shouldReplaceHash('firewall', 'try'));
+  assert.ok(!DB.shouldReplaceHash('dashboard', 'try'), 'tab clicks still push');
+  assert.ok(!DB.shouldReplaceHash('try', 'activity'));
+  assert.ok(!DB.shouldReplaceHash('dashboard', 'dashboard'));
 });
 
 test('mergeCatches is newest first, capped, and uses labels not prompt text', () => {

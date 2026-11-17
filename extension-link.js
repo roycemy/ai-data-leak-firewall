@@ -82,8 +82,9 @@
     if (!isObject(data) || data.type !== MESSAGE_TYPE || data.v !== VERSION || !isObject(data.summary)) return null;
     var s = data.summary;
     if (!isCount(s.total) || !isCount(s.high) || s.high > s.total) return null;
+    if (!isCount(s.stoppedToday) || !isCount(s.stoppedWeek) || s.stoppedToday > s.stoppedWeek || s.stoppedWeek > s.total) return null;
     if (s.lastAt !== null && !(typeof s.lastAt === 'number' && isFinite(s.lastAt) && s.lastAt > 0)) return null;
-    var out = { total: s.total, high: s.high, lastAt: s.lastAt };
+    var out = { total: s.total, high: s.high, lastAt: s.lastAt, stoppedToday: s.stoppedToday, stoppedWeek: s.stoppedWeek };
     for (var group in KEYS) {
       if (!isObject(s[group])) return null;
       out[group] = {};

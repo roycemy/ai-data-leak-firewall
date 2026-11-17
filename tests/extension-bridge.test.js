@@ -30,7 +30,7 @@ test('both sides agree on the message type, request type and version', () => {
 });
 
 test('summarize counts five flags by action, outcome, site, severity and data type', () => {
-  const s = Bridge.summarize(EVENTS);
+  const s = Bridge.summarize(EVENTS, NOW);
   assert.strictEqual(s.total, 5);
   assert.strictEqual(s.high, 3);
   assert.deepStrictEqual(s.byAction, { allow: 0, warn: 2, redact: 1, block: 2 });
@@ -42,10 +42,45 @@ test('summarize counts five flags by action, outcome, site, severity and data ty
 
 test('summarize of nothing is zeros, not an error', () => {
   for (const input of [undefined, null, [], 'x', [null, 7]]) {
-    const s = Bridge.summarize(input);
+    const s = Bridge.summarize(input, NOW);
     assert.strictEqual(s.total, 0);
     assert.strictEqual(s.lastAt, null);
+    assert.strictEqual(s.stoppedToday, 0);
+    assert.strictEqual(s.stoppedWeek, 0);
   }
+});
+
+test('stoppedToday and stoppedWeek count every cancelled prompt, not just the 40 recent ones', () => {
+  const many = [];
+  for (let i = 0; i < 45; i++) many.push(ev(i)); // all cancelled, all today (within 45s of NOW)
+  const s = Bridge.summarize(many, NOW);
+  assert.strictEqual(s.total, 45);
+  assert.strictEqual(s.stoppedToday, 45);
+  assert.strictEqual(s.stoppedWeek, 45);
+  assert.strictEqual(Bridge.recent(many).length, 40, 'the recent list stays capped');
+  const week = ev(0, { outcome: 'cancelled' });
+  week.t = NOW - 3 * 86400000;
+  const old = ev(0, { outcome: 'cancelled' });
+  old.t = NOW - 8 * 86400000;
+  const mixed = [ev(0), week, old];
+  const m = Bridge.summarize(mixed, NOW);
+  assert.strictEqual(m.stoppedToday, 1);
+  assert.strictEqual(m.stoppedWeek, 2);
+});
+
+test('validate requires stoppedToday and stoppedWeek to be whole numbers', () => {
+  const good = Bridge.message(EVENTS, NOW);
+  assert.strictEqual(Link.validate(good).summary.stoppedToday, Bridge.summarize(EVENTS, NOW).stoppedToday);
+  const bad = [
+    Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: 1.5 }) }),
+    Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedWeek: -1 }) }),
+    Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: '2' }) }),
+    Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: 3, stoppedWeek: 1 }) }),
+  ];
+  const missing = JSON.parse(JSON.stringify(good));
+  delete missing.summary.stoppedToday;
+  bad.push(missing);
+  bad.forEach((m, i) => assert.strictEqual(Link.validate(m), null, 'case ' + i));
 });
 
 test('the posted message carries counts and labels only, never text, rules or ids', () => {
@@ -57,7 +92,7 @@ test('the posted message carries counts and labels only, never text, rules or id
   assert.ok(!json.includes('aws-access-key'), 'rule ids are not sent');
   assert.ok(!/"id\d/.test(json), 'event ids are not sent');
   assert.deepStrictEqual(Object.keys(Bridge.message([]).summary).sort(),
-    ['byAction', 'byCategory', 'byOutcome', 'bySeverity', 'bySite', 'high', 'lastAt', 'total']);
+    ['byAction', 'byCategory', 'byOutcome', 'bySeverity', 'bySite', 'high', 'lastAt', 'stoppedToday', 'stoppedWeek', 'total']);
 });
 
 test('validate accepts exactly what the bridge posts', () => {

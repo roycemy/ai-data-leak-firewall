@@ -36,15 +36,18 @@
   // ---------- Navigation ----------
   // Three tabs. Older hashes still resolve to the tab that replaced them.
   var tabs = ['dashboard', 'try', 'setup'];
-  var HASH_TO_TAB = {
-    dashboard: 'dashboard',
-    try: 'try', 'try-it': 'try', firewall: 'try', assessment: 'try',
-    setup: 'setup', policies: 'setup', extension: 'setup', install: 'setup',
-    activity: 'dashboard', audit: 'dashboard'
-  };
-  function tabFor(name) { return HASH_TO_TAB[name] || 'dashboard'; }
+  var HASH_TO_TAB = window.DatoDashboard.HASH_TO_TAB;
+  function tabFor(name) { return window.DatoDashboard.tabFor(name); }
   function setHash(name) {
-    if (location.hash.slice(1) !== name) location.hash = name;
+    var current = (location.hash || '').slice(1);
+    if (current === name) return;
+    // Redirects (unknown or old hashes) replace the current history entry so
+    // Back is not trapped. Tab clicks and See all still push a new entry.
+    if (window.DatoDashboard.shouldReplaceHash(current, name)) {
+      history.replaceState(null, '', '#' + name);
+      return;
+    }
+    location.hash = name;
   }
   function openAudit() {
     var panel = document.getElementById('view-activity');
@@ -74,7 +77,7 @@
     }
     if (tab === 'try' && name === 'assessment' && window.DatoAssessment) window.DatoAssessment.open();
     // Keep #activity / #audit / #assessment in the URL so those links still land correctly.
-    setHash(HASH_TO_TAB[name] ? name : tab);
+    setHash(window.DatoDashboard.canonicalHash(name));
   }
   tabs.forEach(function (v) {
     document.getElementById('nav-' + v).addEventListener('click', function (e) { e.preventDefault(); showView(v); });
@@ -658,8 +661,8 @@
     var connected = !!extSummary;
     var hero = DB.hero({
       connected: connected,
-      stopsToday: DB.stops(events, extRecent, dayStart, now + 1),
-      stopsWeek: DB.stops(events, extRecent, weekStart, now + 1)
+      stopsToday: DB.stops(events, extSummary && extSummary.stoppedToday, dayStart, now + 1),
+      stopsWeek: DB.stops(events, extSummary && extSummary.stoppedWeek, weekStart, now + 1)
     });
     var heroEl = document.getElementById('hero-status');
     heroEl.textContent = hero.text;
@@ -686,15 +689,38 @@
 
     var catches = DB.mergeCatches(events, extRecent, cats, 8);
     var nowText = now;
-    document.getElementById('recent-catches').innerHTML = catches.map(function (c) {
+    var list = document.getElementById('recent-catches');
+    list.textContent = '';
+    catches.forEach(function (c) {
       var site = c.source === 'extension' ? EXT.siteName(c.site) : c.site;
       var o = DB.catchOutcome(c.outcome);
-      return '<li class="catch-row"><div class="catch-main">' +
-        '<span class="catch-label">' + escapeHTML(c.label) + '</span>' +
-        '<span class="catch-meta">' + escapeHTML(site) + ' · <time datetime="' +
-        new Date(c.time).toISOString() + '">' + DB.timeAgo(c.time, nowText) + '</time></span></div>' +
-        '<span class="badge ' + o.cls + '"><span class="dot" aria-hidden="true"></span>' + escapeHTML(o.word) + '</span></li>';
-    }).join('');
+      var li = document.createElement('li');
+      li.className = 'catch-row';
+      var main = document.createElement('div');
+      main.className = 'catch-main';
+      var label = document.createElement('span');
+      label.className = 'catch-label';
+      label.textContent = c.label;
+      var meta = document.createElement('span');
+      meta.className = 'catch-meta';
+      var time = document.createElement('time');
+      time.dateTime = new Date(c.time).toISOString();
+      time.textContent = DB.timeAgo(c.time, nowText);
+      meta.appendChild(document.createTextNode(site + ' · '));
+      meta.appendChild(time);
+      main.appendChild(label);
+      main.appendChild(meta);
+      var badge = document.createElement('span');
+      badge.className = 'badge ' + o.cls;
+      var dot = document.createElement('span');
+      dot.className = 'dot';
+      dot.setAttribute('aria-hidden', 'true');
+      badge.appendChild(dot);
+      badge.appendChild(document.createTextNode(o.word));
+      li.appendChild(main);
+      li.appendChild(badge);
+      list.appendChild(li);
+    });
     document.getElementById('catches-card').hidden = catches.length === 0;
     document.getElementById('catches-empty').hidden = !(connected && catches.length === 0);
   }
@@ -720,7 +746,7 @@
   renderPolicies();
   // Dashboard is home and the default. Older hashes still open the matching tab.
   var initial = (location.hash || '#dashboard').slice(1);
-  showView(HASH_TO_TAB[initial] ? initial : 'dashboard');
+  showView(initial);
 
   // Expose a small API for the assessment module
   window.DatoApp = {

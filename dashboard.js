@@ -216,17 +216,37 @@
   /* isWebsiteStop(e) -> true when this website blocked a prompt (nothing sent). */
   function isWebsiteStop(e) { return e && e.action === 'block'; }
 
-  /* stops(events, extRecent, from, to) -> how many risky prompts were stopped
-   * in [from, to): website blocks plus extension outcomes of "stopped". */
-  function stops(events, extRecent, from, to) {
+  /* stops(events, extCount, from, to) -> website blocks in [from, to) plus the
+   * extension's uncapped stop count (summary.stoppedToday / stoppedWeek). */
+  function stops(events, extCount, from, to) {
     var n = 0;
     (events || []).forEach(function (e) {
       if (isWebsiteStop(e) && e.ts >= from && e.ts < to) n++;
     });
-    (extRecent || []).forEach(function (e) {
-      if (e && e.outcome === 'stopped' && e.time >= from && e.time < to) n++;
-    });
+    extCount = Math.floor(Number(extCount));
+    if (extCount > 0) n += extCount;
     return n;
+  }
+
+  // Hash aliases for the three tabs. Unknown values fall back to Dashboard.
+  var HASH_TO_TAB = {
+    dashboard: 'dashboard',
+    try: 'try', 'try-it': 'try', firewall: 'try', assessment: 'try',
+    setup: 'setup', policies: 'setup', extension: 'setup', install: 'setup',
+    activity: 'dashboard', audit: 'dashboard'
+  };
+  var CANONICAL_HASH = ['dashboard', 'try', 'setup', 'activity', 'audit', 'assessment'];
+  function tabFor(name) { return HASH_TO_TAB[name] || 'dashboard'; }
+  function canonicalHash(name) {
+    if (name === 'activity' || name === 'audit' || name === 'assessment') return name;
+    return tabFor(name);
+  }
+  function isCanonicalHash(name) { return CANONICAL_HASH.indexOf(name) !== -1; }
+  /* shouldReplaceHash(current, next) -> true when the URL hash must be corrected
+   * without pushing a history entry (unknown or old alias). Canonical hashes
+   * (tab clicks, See all) still push so Back works. */
+  function shouldReplaceHash(current, next) {
+    return current !== next && !isCanonicalHash(current);
   }
 
   /* hero({ connected, stopsToday, stopsWeek }) -> { kind, text } for the
@@ -333,7 +353,12 @@
     catchOutcome: catchOutcome,
     websiteCatch: websiteCatch,
     mergeCatches: mergeCatches,
-    WEEK: WEEK
+    WEEK: WEEK,
+    HASH_TO_TAB: HASH_TO_TAB,
+    tabFor: tabFor,
+    canonicalHash: canonicalHash,
+    isCanonicalHash: isCanonicalHash,
+    shouldReplaceHash: shouldReplaceHash
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined' && module.exports) { module.exports = globalThis.DatoDashboard; }
