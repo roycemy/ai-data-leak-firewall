@@ -271,6 +271,12 @@
 
   // ---------- Breach check (Mini Project 3) ----------
   var breachBox = document.getElementById('breach-check');
+  // Unticking the box removes any breach-check note, including a "Checking…"
+  // that would otherwise stay on screen (its answer is ignored once unticked).
+  breachBox.addEventListener('change', function () {
+    var note = document.getElementById('breach-note');
+    if (!breachBox.checked && note) note.remove();
+  });
 
   // Show one note under the inspection result. kind: muted | loading | error | bad | good
   function showBreachNote(kind, html) {
