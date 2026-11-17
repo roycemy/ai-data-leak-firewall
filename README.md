@@ -12,7 +12,7 @@ AI Firewall (first called Dato; the repo and the Chrome extension still use that
 
 **The API.** [Have I Been Pwned — Pwned Passwords](https://haveibeenpwned.com/API/v3#PwnedPasswords), range endpoint: `GET https://api.pwnedpasswords.com/range/{first 5 characters of the SHA-1 hash}`. It is free, needs no API key, and allows calls from the browser (it sends `Access-Control-Allow-Origin: *`).
 
-**How it stays private.** The browser hashes the password with SHA-1 (`crypto.subtle.digest`) and sends only the first 5 of the 40 hex characters. The API answers with every known hash that starts with those 5 characters (about 2,000 of them), and the page looks for the remaining 35 characters in that list itself. The password and its full hash never leave the browser. Only counts are saved (passwords checked, passwords breached), never the password, the hash or the prefix.
+**How it stays private.** The browser hashes the password with SHA-1 (`crypto.subtle.digest`) and sends only the first 5 of the 40 hex characters. The API answers with every known hash that starts with those 5 characters (about 2,000 of them), and the page looks for the remaining 35 characters in that list itself. The password and its full hash never leave the browser. Have I Been Pwned does see the request itself (and your IP address), just not the password. Only counts are saved (passwords checked, passwords breached), never the password, the hash or the prefix.
 
 **How to use it.**
 1. Open the **Firewall** tab.

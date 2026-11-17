@@ -42,7 +42,7 @@ API: Have I Been Pwned, Pwned Passwords range endpoint, https://haveibeenpwned.c
 3. Keyboard: Ctrl/Cmd + Enter in the prompt box inspects.
 4. Dropdown: audit log filter, including "Password found in breaches".
 5. Keyboard: every control can be reached with Tab and shows a cobalt focus ring; a skip link jumps to the tool; the open tab is marked for screen readers; motion is turned off when the browser asks for reduced motion.
-6. Checkbox: "Also check detected passwords against known breaches" on the Firewall tab, off by default. Changing it does not re-run the last inspection; the next Inspect uses it.
+6. Checkbox: "Also check detected passwords against known breaches" on the Firewall tab, off by default. Ticking it does not re-run the last inspection; the note under it says "Runs on your next Inspect." Unticking it removes any breach-check note and ignores an answer still on its way. It is not saved, so it is off again after a reload (the note says so).
 
 ## Page states
 | State | When | What the page shows |
