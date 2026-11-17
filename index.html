@@ -63,7 +63,7 @@
             <label for="breach-check">Check passwords against known breaches</label>
             <input type="checkbox" id="breach-check" class="switch" aria-describedby="breach-privacy">
           </div>
-          <p id="breach-privacy" class="breach-privacy">Only a 5-character hash prefix leaves this browser.</p>
+          <p id="breach-privacy" class="breach-privacy">Your password stays on this device. Only a short scrambled code is checked online.</p>
           <details class="how">
             <summary>How this works</summary>
             <p>When a prompt contains a password, your browser hashes it with SHA-1 and sends only the first 5 characters of the hash to the free <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> Pwned Passwords API. The password and its full hash never leave this browser, and only counts are saved. Have I Been Pwned sees the request (and your IP address), not the password. Runs on your next Inspect. Off again next time you open the page.</p>

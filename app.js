@@ -224,7 +224,7 @@
 
   // Verdict copy for each governing action: title, one-line explanation, Send button text.
   var VERDICT = {
-    block: { title: 'Blocked by policy', sub: 'Remove the flagged items, or ask an admin to change the policy.', send: 'Blocked by policy' },
+    block: { title: 'Blocked by policy', sub: 'Remove them, or change the rule in Policies.', send: 'Blocked by policy' },
     redact: { title: 'Redact before sending', sub: 'AI Firewall removed the flagged data. Send the redacted version below instead.', send: 'Send redacted version (simulated)' },
     warn: { title: 'Review before sending', sub: 'Make sure you mean to share the items below.', send: 'I understand, send anyway (simulated)' },
     allow: { title: 'Allowed by policy', sub: 'The findings below were logged for audit.', send: 'Send to AI (simulated)' },
@@ -238,13 +238,14 @@
     var key = findings.length ? action : 'clean';
     var v = VERDICT[key];
 
-    // 1. One verdict banner. For block, redact and warn it names the data
-    //    classes whose policy decided it, e.g. "Secrets & Credentials: Block."
+    // 1. One verdict banner. For block, redact and warn it says, in plain words,
+    //    which kinds of data decided it, e.g. "Your policy blocks passwords and keys."
     var deciding = Object.keys(D.CATEGORIES).filter(function (c) {
       return policies[c] === action && findings.some(function (f) { return f.category === c; });
-    }).map(function (c) { return D.CATEGORIES[c].label; });
-    var because = (key === 'block' || key === 'redact' || key === 'warn') && deciding.length
-      ? deciding.join(', ') + ': ' + ACTION_LABEL[action] + '. ' : '';
+    }).map(function (c) { return D.CATEGORIES[c].label.toLowerCase().replace(' & ', ' and '); });
+    var VERB = { block: 'blocks', redact: 'redacts', warn: 'flags' };
+    var because = VERB[key] && deciding.length
+      ? 'Your policy ' + VERB[key] + ' ' + deciding.join(' and ') + '. ' : '';
     var html = '<div class="verdict verdict-' + key + '">' + icon(VERDICT_ICON[key]) +
       '<div><p class="verdict-title">' + v.title + '</p><p class="verdict-sub">' + because + v.sub + '</p></div></div>';
 
@@ -324,8 +325,11 @@
     if (kind === 'bad') row.querySelector('.badge').outerHTML = sevBadge('critical'); // raised to Critical
   }
 
-  // Every breach summary says what left the browser (the card's badge says "On this device").
-  var SENT_NOTE = '<span class="muted"> Sent: a 5-character hash prefix only.</span>';
+  // Every breach summary says the password stayed here. The technical detail
+  // (SHA-1, a 5-character prefix) is in "How this works" and the README.
+  var SENT_NOTE = '<span class="muted"> Your password stayed on this device.</span>';
+  // A fixed-width glyph so the breach lines line up with each other.
+  function glyph(ch) { return '<span class="glyph" aria-hidden="true">' + ch + '</span>'; }
 
   function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 
@@ -351,10 +355,9 @@
 
     if (outcome.error) {
       event.breachError = true; saveEvents();
-      found.forEach(function (p) { setRowBreach(p.findingIndex, 'error', '▲ Breach check unavailable'); });
-      showBreachNote('error', '⚠ <b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
-        '. The local scan above still applies.' +
-        '<span class="muted"> Sent at most: a 5-character hash prefix.</span>');
+      found.forEach(function (p) { setRowBreach(p.findingIndex, 'error', glyph('▲') + '<span>Breach check unavailable</span>'); });
+      showBreachNote('error', '▲ <b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
+        '. The local scan above still applies.' + SENT_NOTE);
       return;
     }
 
@@ -363,10 +366,10 @@
     outcome.results.forEach(function (r) {
       if (r.count > 0) {
         findings[r.findingIndex].severity = 'critical';
-        setRowBreach(r.findingIndex, 'bad', '<span class="badge badge-solid-critical">Found in breaches</span>' +
-          '<span>Seen <b class="num">' + r.count.toLocaleString() + '</b> times. Change this password everywhere it is used.</span>');
+        setRowBreach(r.findingIndex, 'bad', glyph('◆') + '<span>Found in known breaches · seen <b class="num">' +
+          r.count.toLocaleString() + '</b> times. Change this password everywhere it is used.</span>');
       } else {
-        setRowBreach(r.findingIndex, 'good', '✓ Not found in known breaches');
+        setRowBreach(r.findingIndex, 'good', glyph('✓') + '<span>Not found in known breaches</span>');
       }
     });
     // Save counts only: never the password, the hash or the prefix.
@@ -375,13 +378,11 @@
     if (outcome.breached) event.topSeverity = 'critical';
     saveEvents();
 
-    if (outcome.breached) {
-      showBreachNote('bad', '<b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
-        ' found in known breaches.</b>' + SENT_NOTE);
-    } else {
-      showBreachNote('good', '✓ <b>Not found in known breaches</b> (' + plural(outcome.checked, 'password') +
-        ' checked). That does not make it safe to paste into an AI tool.' + SENT_NOTE);
-    }
+    // One quiet summary line; the result itself is in each password's row above.
+    var many = outcome.checked > 1;
+    showBreachNote(outcome.breached ? 'bad' : 'good', 'Breach check done' +
+      (many ? ' (' + outcome.breached + ' of ' + outcome.checked + ' found)' : '') + '.' +
+      (many ? '<span class="muted"> Your passwords stayed on this device.</span>' : SENT_NOTE));
   }
 
   function escapeHTML(s) {
@@ -390,7 +391,13 @@
     });
   }
 
-  document.getElementById('scan-btn').addEventListener('click', function () { scanNow(); });
+  // On narrow screens the result is below the prompt, so bring it into view.
+  function showResultOnPhone() {
+    if (!window.matchMedia('(max-width: 960px)').matches) return;
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.result-card').scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+  }
+  document.getElementById('scan-btn').addEventListener('click', function () { if (scanNow()) showResultOnPhone(); });
   document.getElementById('send-btn').addEventListener('click', function () {
     var btn = this;
     if (btn.disabled) return;

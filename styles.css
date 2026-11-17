@@ -90,7 +90,6 @@ code { font-family: var(--mono); font-size: 0.875em; background: var(--surface-2
 .badge-low, .sev.sev-low { background: var(--low-tint); color: var(--low); }
 .badge-ok, .policy-allow, .action-allow, .action-allowed-clean { background: var(--ok-tint); color: var(--ok); }
 .badge-info, .policy-redact, .action-redact { background: var(--accent-tint); color: var(--accent-strong); }
-.badge-solid-critical { background: var(--critical); color: #fff; }
 .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 
 /* ---- Buttons ---- */
@@ -197,7 +196,11 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .posture-note { color: var(--text-2); font-size: 14px; line-height: 20px; margin-top: 16px; }
 
 /* ---- Firewall ---- */
-.console-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.console-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.result-card { display: flex; flex-direction: column; }
+.result-card .scan-result { flex: 1; display: flex; flex-direction: column; }
+.result-card .scan-result > .empty { margin: auto 0; }
+#result-actions { margin-top: auto; }
 .prompt-input {
   display: block; width: 100%; min-height: 200px; resize: vertical;
   background: var(--surface); color: var(--text);
@@ -259,7 +262,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .finding-label { font-size: 16px; line-height: 24px; font-weight: 500; }
 .finding-meta { font-size: 13px; line-height: 20px; color: var(--text-2); overflow-wrap: anywhere; }
 .finding-meta .masked { background: none; padding: 0; }
-.finding-breach { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 8px; font-size: 13px; line-height: 20px; }
+.finding-breach { display: flex; align-items: baseline; gap: 4px; margin-top: 8px; font-size: 13px; line-height: 20px; }
 .finding-breach.breach-bad { color: var(--critical); }
 .finding-breach.breach-good { color: var(--ok); }
 .finding-breach.breach-error { color: var(--high); }
@@ -269,10 +272,11 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
   border: 2px solid var(--border-strong); border-top-color: var(--accent); animation: spin 0.8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.breach-note { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; line-height: 20px; color: var(--text-2); }
+.breach-note { display: block; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px; line-height: 20px; color: var(--text-2); }
 .breach-note b { color: var(--text); font-weight: 600; }
 .breach-note.breach-error { color: var(--high); }
-.breach-note .muted { margin-left: auto; }
+.breach-note .muted { display: block; margin: 4px 0 0; }
+.glyph { display: inline-block; width: 1em; text-align: center; flex: none; }
 .redacted-box { margin-top: 16px; border-radius: var(--radius-sm); background: var(--surface-2); padding: 12px 16px 16px; }
 .redacted-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .redacted-text { font-family: var(--mono); font-size: 13px; line-height: 20px; white-space: pre-wrap; word-break: break-word; margin: 0; max-height: 240px; overflow: auto; }
@@ -294,8 +298,8 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 }
 @media (max-width: 960px) { .console-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) {
+  .prompt-input { min-height: 120px; }
   .finding .badge { min-width: 0; }
-  .breach-note .muted { margin-left: 0; }
   .result-actions .btn { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .finding-breach.breach-loading::before { display: none; } }
