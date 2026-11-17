@@ -333,5 +333,5 @@ code { font-family: var(--mono); font-size: 0.9em; background: var(--panel-2); p
 .breach-bad { background: var(--red-bg); border-color: var(--red-line); color: var(--red); }
 .breach-good { background: var(--green-bg); border-color: var(--green-line); color: var(--green); }
 .breach-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; background: var(--red); color: #fff; }
-@media (prefers-reduced-motion: reduce) { .breach-loading::before { border-top-color: var(--line-strong); } }
+@media (prefers-reduced-motion: reduce) { .breach-loading::before { display: none; } } /* no spinner, just the words */
 .muted { color: var(--muted); }
