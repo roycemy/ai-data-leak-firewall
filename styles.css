@@ -286,6 +286,12 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .finding.sev-medium > .sev { background: var(--medium-tint); color: var(--medium); }
 .findings > .finding { align-items: center; }
 .findings > .finding .finding-label { flex: 1; }
+.findings > .finding > .sev { min-width: 88px; }
+@media (max-width: 720px) {
+  .findings > .finding { flex-wrap: wrap; gap: 4px 12px; }
+  .findings > .finding .finding-label { flex: 1 1 0; min-width: 0; }
+  .findings > .finding .masked { flex-basis: 100%; padding-left: 100px; overflow-wrap: anywhere; background: none; }
+}
 @media (max-width: 960px) { .console-grid { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) {
   .finding .badge { min-width: 0; }
