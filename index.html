@@ -173,6 +173,11 @@
         <p class="lede">Install the extension for ChatGPT, Claude and Gemini, then choose what happens to each kind of data. To try the checks without installing anything, use the <a href="#try" id="goto-firewall">Try it</a> tab.</p>
       </div>
     </div>
+    <section class="card name-card" aria-labelledby="name-title">
+      <label for="user-name" class="card-title" id="name-title">Your name</label>
+      <p class="field-hint" id="name-hint">Shown on Recent catches and the audit log. It stays in this browser and is never sent anywhere.</p>
+      <input id="user-name" type="text" maxlength="60" autocomplete="name" spellcheck="false" aria-describedby="name-hint">
+    </section>
     <div id="view-install">
       <div class="install-grid">
         <section class="card" aria-labelledby="install-title">
@@ -208,7 +213,7 @@ Test card: 4111 1111 1111 1111</pre>
       <div class="card"><div id="policy-list"></div></div>
       <div class="reset-row">
         <button id="reset-all" class="btn btn-secondary danger">Reset everything</button>
-        <span class="reset-note">Restores default policies, clears the audit log and the prompt box.</span>
+        <span class="reset-note">Restores default policies, clears the audit log and the prompt box. Your name is kept.</span>
       </div>
     </div>
   </section>

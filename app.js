@@ -26,6 +26,21 @@
   }
   var policies = Object.assign({}, DEFAULT_POLICIES, loadJSON(POLICY_KEY, {}));
   var events = loadJSON(EVENT_KEY, []);
+  var NAME_KEY = 'aif.userName';
+  function loadName() {
+    try { return window.DatoDashboard.sanitizeName(localStorage.getItem(NAME_KEY) || ''); }
+    catch (e) { return ''; }
+  }
+  function saveName(value) {
+    var s = window.DatoDashboard.sanitizeName(value);
+    try {
+      if (s) localStorage.setItem(NAME_KEY, s);
+      else localStorage.removeItem(NAME_KEY);
+    } catch (e) {}
+    return s;
+  }
+  // Profile label for catch rows and the log. Reset everything does not clear it.
+  var userName = loadName();
 
   function savePolicies() { localStorage.setItem(POLICY_KEY, JSON.stringify(policies)); }
   function saveEvents() {
@@ -549,14 +564,16 @@
       return;
     }
     var html = '<table class="log-table"><thead><tr><th>Time</th><th>Event</th><th>Severity</th><th>Outcome</th><th>Breach check</th></tr></thead><tbody>';
+    var sources = [];
     list.forEach(function (row) {
       var when = new Date(row.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
       var timeCell = '<td class="log-time" data-label="Time"><time datetime="' + new Date(row.ts).toISOString() + '">' + when + '</time></td>';
       if (row.kind === 'extension') {
         var e = row.event;
         var site = EXT.siteName(e.site);
+        sources.push(DB.catchMeta(userName, site, row.ts));
         html += '<tr>' + timeCell +
-          '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(e.label) + '</span><span class="log-source">' + escapeHTML(site) + '</span></td>' +
+          '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(e.label) + '</span><span class="log-source"></span></td>' +
           '<td data-label="Severity" class="log-na"><span class="muted">—</span></td>' +
           '<td data-label="Outcome"><span class="badge ' + outcomeBadge(e.outcome) + '"><span class="dot" aria-hidden="true"></span>' + escapeHTML(e.outcome.charAt(0).toUpperCase() + e.outcome.slice(1)) + '</span></td>' +
           '<td data-label="Breach check" class="log-na"><span class="muted">—</span></td></tr>';
@@ -564,8 +581,9 @@
       }
       var ev = row.event;
       var d = DB.describe(ev, D.CATEGORIES);
+      sources.push(DB.catchMeta(userName, d.source, row.ts));
       html += '<tr>' + timeCell +
-        '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(d.title) + '</span><span class="log-source">' + escapeHTML(d.source) + '</span></td>' +
+        '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(d.title) + '</span><span class="log-source"></span></td>' +
         (DB.isScan(ev) ? '<td data-label="Severity">' + (ev.total ? sevBadge(ev.topSeverity) : '<span class="muted">—</span>') + '</td>'
                       : '<td data-label="Severity" class="log-na"><span class="muted">—</span></td>') +
         '<td data-label="Outcome"><span class="badge ' + d.outcomeCls + '"><span class="dot" aria-hidden="true"></span>' + d.outcome + '</span></td>' +
@@ -573,6 +591,9 @@
                       : '<td data-label="Breach check" class="log-na"><span class="muted">—</span></td>') + '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
+    // The name is written with textContent only, never innerHTML.
+    var sourceEls = wrap.querySelectorAll('.log-source');
+    for (var i = 0; i < sourceEls.length; i++) sourceEls[i].textContent = sources[i];
   }
   function outcomeBadge(outcome) {
     return ({ stopped: 'badge-critical', 'sent anyway': 'badge-high', redacted: 'badge-info', allowed: 'badge-ok', warned: 'badge-high', clean: 'badge-ok' })[outcome] || 'badge-low';
@@ -614,6 +635,26 @@
     showView('dashboard');
   });
 
+  // ---------- Your name (Setup) ----------
+  // Rendered and saved with textContent / input.value only. Never sent, never
+  // written into the extension payload. Reset everything leaves it in place.
+  var nameInput = document.getElementById('user-name');
+  nameInput.value = userName;
+  function applyName(commit) {
+    userName = saveName(nameInput.value);
+    if (commit) nameInput.value = userName;
+    renderDashboard();
+    if (!document.getElementById('view-activity').hidden) renderActivity();
+  }
+  nameInput.addEventListener('input', function () {
+    if (nameInput.value.length > window.DatoDashboard.NAME_MAX) {
+      nameInput.value = nameInput.value.slice(0, window.DatoDashboard.NAME_MAX);
+    }
+    applyName(false);
+  });
+  nameInput.addEventListener('change', function () { applyName(true); });
+  nameInput.addEventListener('blur', function () { applyName(true); });
+
   // ---------- Dashboard ----------
   // The numbers and charts come from dashboard.js (pure functions over `events`).
   var DB = window.DatoDashboard;
@@ -623,6 +664,7 @@
   var EXT = window.DatoExtensionLink;
   var extSummary = null;
   var extRecent = [];
+  var extStoppedTodayKnown = true;
   var SHIELD_ICON = '<svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>';
   window.addEventListener('message', function (e) {
     if (!EXT.isFromExtension(e, window)) return;
@@ -630,6 +672,7 @@
     if (!msg) return;
     extSummary = msg.summary;
     extRecent = msg.recent;
+    extStoppedTodayKnown = msg.stoppedTodayKnown !== false;
     renderDashboard();
     if (!document.getElementById('view-activity').hidden) renderActivity();
   });
@@ -662,7 +705,8 @@
     var hero = DB.hero({
       connected: connected,
       stopsToday: DB.stops(events, extSummary && extSummary.stoppedToday, dayStart, now + 1),
-      stopsWeek: DB.stops(events, extSummary && extSummary.stoppedWeek, weekStart, now + 1)
+      stopsWeek: DB.stops(events, extSummary && extSummary.stoppedWeek, weekStart, now + 1),
+      stopsTodayKnown: !extSummary || extStoppedTodayKnown !== false
     });
     var heroEl = document.getElementById('hero-status');
     heroEl.textContent = hero.text;
@@ -705,8 +749,8 @@
       meta.className = 'catch-meta';
       var time = document.createElement('time');
       time.dateTime = new Date(c.time).toISOString();
-      time.textContent = DB.timeAgo(c.time, nowText);
-      meta.appendChild(document.createTextNode(site + ' · '));
+      time.textContent = DB.clockTime(c.time);
+      meta.appendChild(document.createTextNode(DB.displayName(userName) + ' · ' + site + ' · '));
       meta.appendChild(time);
       main.appendChild(label);
       main.appendChild(meta);

@@ -110,6 +110,27 @@ test('hero: install CTA when the extension is not connected; Working when it is'
     { kind: 'ok', text: 'Working. 4 risky prompts stopped this week' });
   assert.deepStrictEqual(DB.hero({ connected: true, stopsToday: 0, stopsWeek: 0 }),
     { kind: 'ok', text: 'Working. Nothing risky yet today' });
+  assert.deepStrictEqual(DB.hero({ connected: true, stopsToday: 0, stopsWeek: 0, stopsTodayKnown: false }),
+    { kind: 'ok', text: 'Working.' });
+  assert.deepStrictEqual(DB.hero({ connected: true, stopsToday: 2, stopsWeek: 2, stopsTodayKnown: false }),
+    { kind: 'ok', text: 'Working. 2 risky prompts stopped today' });
+});
+
+test('sanitizeName trims, cuts to 60, and leaves HTML as literal text; empty shows as You', () => {
+  assert.strictEqual(DB.sanitizeName(''), '');
+  assert.strictEqual(DB.sanitizeName('   '), '');
+  assert.strictEqual(DB.displayName(''), 'You');
+  assert.strictEqual(DB.displayName('   '), 'You');
+  assert.strictEqual(DB.sanitizeName('  Royce Myers  '), 'Royce Myers');
+  assert.strictEqual(DB.sanitizeName('A'.repeat(80)), 'A'.repeat(60));
+  assert.strictEqual(DB.sanitizeName('A'.repeat(80)).length, 60);
+  const dirty = '<img src=x onerror=alert(1)>';
+  assert.strictEqual(DB.sanitizeName(dirty), dirty);
+  assert.ok(!DB.sanitizeName(dirty).includes('&lt;'), 'HTML is not escaped into entities; render with textContent');
+  const clock = DB.clockTime(NOW);
+  assert.strictEqual(DB.catchMeta('', 'ChatGPT', NOW), 'You · ChatGPT · ' + clock);
+  assert.strictEqual(DB.catchMeta('  Royce Myers  ', 'ChatGPT', NOW), 'Royce Myers · ChatGPT · ' + clock);
+  assert.strictEqual(DB.catchMeta(dirty, 'ChatGPT', NOW), dirty + ' · ChatGPT · ' + clock);
 });
 
 test('passwordAlert is a red line only when a breached password was found', () => {
