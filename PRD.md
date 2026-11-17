@@ -17,7 +17,7 @@ Someone who pastes work text into AI tools: an employee, or the security person 
 | `inspectedText` | string or `null`: the exact prompt + files text the last Inspect ran on | no | Send button, its click handler | `scanNow` sets it; editing the prompt, adding or removing a file, Clear and an empty Inspect set it back to `null` |
 
 ## Worked-out output
-- Breach count per detected password, from the Pwned Passwords range response (see below). A password found at least once is "confirmed breached": its finding is raised to critical and tagged, and the event's `breached` count goes up.
+- Breach count per detected password, from the Pwned Passwords range response (see below). A password found at least once is "found in breaches" (the string is in breach data; it does not mean the user's account was breached): its finding is raised to critical and tagged, and the event's `breached` count goes up.
 - Audit events gain two numbers when the breach check ran: `breachChecked` (passwords checked) and `breached` (passwords found in breaches), plus `breachError: true` when the check could not run. Counts only: never the password, the hash or the prefix.
 - Findings per class, from `DatoDetect.scan`.
 - Governing action: the strictest policy among the findings (block > redact > warn > allow).
@@ -40,7 +40,7 @@ API: Have I Been Pwned, Pwned Passwords range endpoint, https://haveibeenpwned.c
 1. Buttons: Inspect, Send (only after Inspect, and only until the text changes), Clear, policy toggles, Clear log, Export, Reset everything.
 2. File input: attach text files.
 3. Keyboard: Ctrl/Cmd + Enter in the prompt box inspects.
-4. Dropdown: audit log filter, including "Confirmed breached".
+4. Dropdown: audit log filter, including "Password found in breaches".
 5. Keyboard: every control can be reached with Tab and shows a cobalt focus ring; a skip link jumps to the tool; the open tab is marked for screen readers; motion is turned off when the browser asks for reduced motion.
 6. Checkbox: "Also check detected passwords against known breaches" on the Firewall tab, off by default. Changing it does not re-run the last inspection; the next Inspect uses it.
 
@@ -53,7 +53,7 @@ API: Have I Been Pwned, Pwned Passwords range endpoint, https://haveibeenpwned.c
 | Breach check: error | offline, network error, non-OK status (404, 429, 503…), or a browser without `crypto.subtle` | Amber note: "Breach check unavailable: <reason>. The local scan above still applies." The verdict, findings, Send rule and log work as normal; the event gets `breachError: true`. |
 | Invalid input | Inspect with no text and no files; file over 2 MB; unreadable file | Red message under the prompt box (`role="alert"`), red border on the box, focus returns to the box. No pop-ups. The message clears when the user types or attaches a valid file. With the breach-check box ticked, nothing is sent to the API either. |
 | Edited after inspecting | prompt or files change while a result is showing | The old result is replaced by "You changed the prompt after it was inspected. Press Inspect locally…", and Send is disabled until the next Inspect. A breach check still running for the old text is ignored when it answers. |
-| In use | text or files inspected | Verdict banner coloured by action, findings grouped by class with masked values, redacted copy when policy is Redact, Send button text matches the verdict, log and dashboard update. With the breach check on: each password shows "Found in known breaches N times" (finding raised to CRITICAL, tagged "Confirmed breached") or "Not found in known breaches", and the log's Breach check column and the dashboard count update. |
+| In use | text or files inspected | Verdict banner coloured by action, findings grouped by class with masked values, redacted copy when policy is Redact, Send button text matches the verdict, log and dashboard update. With the breach check on: each password shows "Found in known breaches N times" (finding raised to CRITICAL, tagged "Found in breaches") or "Not found in known breaches", and the log's Breach check column and the dashboard count update. |
 | After reset | Clear (console only) or Reset everything (policies, log, console) | Console returns to the empty state (Send disabled again); after Reset everything the policies are the defaults, the log is empty, the breach-check box is unticked and the dashboard shows the empty state (Confirmed breached 0). Destructive buttons ask for a second click, not a dialog. |
 
 ## Constraints

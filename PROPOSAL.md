@@ -21,7 +21,7 @@ Company owners and security staff who don't want confidential data ending up in 
 
 ## What each action changes
 - **Inspect:** scans the text, takes the strictest action across everything it found, and logs one event.
-- **Breach-check box (off by default):** when it is ticked and Inspect finds a password, the browser hashes the password with SHA-1, sends only the first 5 characters of that hash to Have I Been Pwned, and looks for the rest of the hash in the list that comes back. A match means the password is in known breaches: that finding becomes critical and the log and dashboard count it as confirmed breached. If the API is offline or returns an error, the page says so and the normal scan result still stands.
+- **Breach-check box (off by default):** when it is ticked and Inspect finds a password, the browser hashes the password with SHA-1, sends only the first 5 characters of that hash to Have I Been Pwned, and looks for the rest of the hash in the list that comes back. A match means the password is in known breaches: that finding becomes critical and the log and dashboard count it as found in breaches. (It means the password string is in breach data, not that the person's own account was breached.) If the API is offline or returns an error, the page says so and the normal scan result still stands.
 - **Policy buttons:** change that data type's action, save it, and add a line to the log.
 - **Send (simulated):** logs a "sent" event, and it's disabled when the result is Block.
 - **Clear:** empties the form and leaves the log alone.

@@ -28,7 +28,7 @@ One column of content under a top bar. The console is two panels (input, result)
 - **Destructive action armed:** button turns red and its label changes to "Click again to confirm" for 4 seconds.
 - **Breach-check box:** a plain checkbox row under the console buttons, with a short muted privacy note under it ("Sends only the first 5 characters of the password's SHA-1 hash…"). At least 44px tall to tap on a phone.
 - **Breach check, loading:** a quiet `--panel-2` note with a small spinner (no spinner when reduced motion is on) and "Checking…".
-- **Breach check, confirmed breached:** red note (`--red` on its tint) with ⛔ and the count in bold; the password's finding row shows CRITICAL and a red "Confirmed breached" tag.
+- **Breach check, found in breaches:** red note (`--red` on its tint) with ⛔ and the count in bold; the password's finding row shows CRITICAL and a red "Found in breaches" tag.
 - **Breach check, not found:** green note with ✓ "Not found in known breaches", plus a reminder that this is not proof the password is strong.
 - **Breach check, error or nothing to check:** amber note (error) or muted note (nothing to check). Always says the local scan still applies.
 - **After reset:** identical to the empty state.

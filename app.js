@@ -234,7 +234,7 @@
       list.forEach(function (f) {
         html += '<div class="finding sev-' + f.severity + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
           '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code>' +
-          (f.breachCount ? '<span class="breach-tag">Confirmed breached</span>' : '') + '</div>';
+          (f.breachCount ? '<span class="breach-tag">Found in breaches</span>' : '') + '</div>';
       });
       html += '</div>';
     });
@@ -336,7 +336,7 @@
           r.count.toLocaleString() + '</b> times in known breaches</li>';
       }).join('');
       showBreachNote('bad', '⛔ <b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
-        ' confirmed breached.</b> Attackers try these first. Change it everywhere it is used.<ul>' + items + '</ul>');
+        ' found in known breaches.</b> Attackers try these first. Change it everywhere it is used.<ul>' + items + '</ul>');
     } else {
       showBreachNote('good', '✓ <b>Not found in known breaches</b> (' + plural(outcome.checked, 'password') +
         ' checked). That does not make it safe to paste into an AI tool.');
