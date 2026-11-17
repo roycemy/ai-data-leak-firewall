@@ -206,8 +206,16 @@
     });
   }
 
-  document.getElementById('nav-assessment').addEventListener('click', function () {
+  function openDemo() {
+    var panel = document.getElementById('view-assessment');
+    if (!panel) return;
+    panel.hidden = false;
     if (state.step === -1) renderIntro();
-  });
-  renderIntro();
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panel.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+  }
+  var run = document.getElementById('run-demo');
+  if (run) run.addEventListener('click', openDemo);
+  window.DatoAssessment = { open: openDemo };
+  if ((location.hash || '').slice(1) === 'assessment') openDemo();
 })();

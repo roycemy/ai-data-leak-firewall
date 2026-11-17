@@ -22,101 +22,52 @@
   </div>
   <nav class="nav" aria-label="Sections">
     <a href="#dashboard" id="nav-dashboard" class="nav-link">Dashboard</a>
-    <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
-    <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
-    <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
-    <a href="#assessment" id="nav-assessment" class="nav-link">Assessment</a>
-    <a href="#install" id="nav-install" class="nav-link">Extension</a>
+    <a href="#try" id="nav-try" class="nav-link">Try it</a>
+    <a href="#setup" id="nav-setup" class="nav-link">Setup</a>
   </nav>
 </header>
 
 <main class="main" id="main" tabindex="-1">
 
-  <!-- FIREWALL -->
-  <section id="view-firewall" class="view active" aria-labelledby="firewall-title">
-    <div class="view-head">
-      <div>
-        <h1 id="firewall-title">Check a prompt before it reaches AI</h1>
-        <p class="lede">Paste what you are about to send to ChatGPT, Claude or Gemini. AI Firewall checks it on this device and applies your policy.</p>
+  <!-- DASHBOARD -->
+  <section id="view-dashboard" class="view" aria-labelledby="dash-title">
+    <div class="view-head dash-head">
+      <div class="hero-row">
+        <h1 id="dash-title" class="sr-only">Dashboard</h1>
+        <p id="hero-status" class="hero-status">Install the extension to start protecting your AI chats</p>
+        <span class="badge badge-info" id="ext-status" hidden><svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Connected</span>
+      </div>
+      <p class="lede" id="dash-lede">It watches ChatGPT, Claude and Gemini and stops secrets before they're sent. Nothing leaves your browser.</p>
+      <p id="password-alert" class="status-line status-critical" role="status" hidden></p>
+      <p class="hero-actions" id="hero-actions">
+        <a href="#setup" id="get-extension" class="btn btn-primary">Get the extension</a>
+      </p>
+      <ol class="dash-install-steps" id="dash-install-steps">
+        <li>Download <a href="ai-firewall-extension.zip" download>ai-firewall-extension.zip</a>.</li>
+        <li>Extract the zip. You get a folder with <code>manifest.json</code> at the top.</li>
+        <li>In Chrome or Edge, turn on Developer mode and choose <b>Load unpacked</b> on that folder.</li>
+      </ol>
+    </div>
+
+    <div id="dash-stats" hidden>
+      <p class="caption stat-eyebrow" id="stat-period">All time</p>
+      <div class="stat-grid stat-grid-3">
+        <div class="card stat-card"><p class="caption">Flagged</p><p class="stat-num num" id="stat-flagged">0</p></div>
+        <div class="card stat-card"><p class="caption">Blocked</p><p class="stat-num num" id="stat-blocked">0</p></div>
+        <div class="card stat-card"><p class="caption">Sent anyway</p><p class="stat-num num" id="stat-sent">0</p></div>
       </div>
     </div>
-    <div class="console-grid">
-      <section class="card prompt-card" aria-labelledby="prompt-title">
-        <div class="card-head">
-          <h2 class="card-title" id="prompt-title">Prompt</h2>
-          <label class="btn btn-quiet attach-btn">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.5 8.5a5 5 0 01-7-7L14 4.5a3.3 3.3 0 014.7 4.7L10.2 17.7a1.7 1.7 0 01-2.4-2.4L15.5 7.6"/></svg>
-            Attach files
-            <input type="file" id="file-input" multiple hidden
-              accept=".txt,.md,.markdown,.csv,.json,.js,.ts,.py,.java,.go,.rb,.sh,.yaml,.yml,.xml,.html,.css,.sql,.log,.env,.ini,.cfg,.conf">
-          </label>
-        </div>
-        <label for="prompt-input" class="sr-only">Prompt to inspect</label>
-        <textarea id="prompt-input" class="prompt-input" spellcheck="false" aria-describedby="form-error"
-          placeholder="Paste the prompt you are about to send…"></textarea>
-        <p id="form-error" class="form-error" role="alert" hidden></p>
-        <div id="attachments" class="attachments"></div>
 
-        <!-- Mini Project 3: optional breach check (the page's only network call). Off by default. -->
-        <div class="breach-option">
-          <div class="switch-row">
-            <label for="breach-check">Check passwords against known breaches</label>
-            <input type="checkbox" id="breach-check" class="switch" aria-describedby="breach-privacy">
-          </div>
-          <p id="breach-privacy" class="breach-privacy">Your password stays on this device. Only a short scrambled code is checked online.</p>
-          <details class="how">
-            <summary>How this works</summary>
-            <p>When a prompt contains a password, your browser hashes it with SHA-1 and sends only the first 5 characters of the hash to the free <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> Pwned Passwords API. The password and its full hash never leave this browser, and only counts are saved. Have I Been Pwned sees the request (and your IP address), not the password. Runs on your next Inspect. Off again next time you open the page.</p>
-          </details>
-        </div>
-
-        <div class="console-actions">
-          <button id="scan-btn" class="btn btn-primary" title="Shortcut: Ctrl/Cmd + Enter" aria-keyshortcuts="Control+Enter Meta+Enter">Inspect</button>
-          <button id="clear-btn" class="btn btn-quiet">Clear</button>
-        </div>
-      </section>
-
-      <section class="card result-card" aria-labelledby="result-title">
-        <div class="card-head">
-          <h2 class="card-title" id="result-title">Result</h2>
-          <span class="local-badge">On this device</span>
-        </div>
-        <div id="scan-result" class="scan-result" aria-live="polite"></div>
-        <!-- Breach-check summary, in its own live region so a breach answer is
-             announced on its own without re-reading the whole result. -->
-        <div id="breach-status" role="status"></div>
-        <div id="result-actions" class="result-actions" hidden>
-          <button id="send-btn" class="btn btn-secondary" disabled>Inspect first to send</button>
-        </div>
-      </section>
-    </div>
-    <p class="aside">Want this inside ChatGPT, Claude and Gemini? <a href="#install" id="goto-install">Get the Chrome extension</a>.</p>
-  </section>
-
-  <!-- POLICIES -->
-  <section id="view-policies" class="view">
-    <div class="view-head">
-      <div>
-        <h1>Policies</h1>
-        <p class="lede">Choose what happens to each kind of data. <b>Warn</b> shows the risk, <b>Redact</b> masks it and lets the prompt through, <b>Block</b> stops the send.</p>
+    <section class="card catches-card" id="catches-card" aria-labelledby="catches-title" hidden>
+      <div class="card-head">
+        <h2 class="card-title" id="catches-title">Recent catches</h2>
+        <button type="button" id="see-all" class="link-quiet" aria-expanded="false" aria-controls="view-activity">See all</button>
       </div>
-    </div>
-    <div class="card"><div id="policy-list"></div></div>
-    <div class="reset-row">
-      <button id="reset-all" class="btn btn-secondary danger">Reset everything</button>
-      <span class="reset-note">Restores default policies, clears the audit log and the prompt box.</span>
-    </div>
-  </section>
+      <ul id="recent-catches" class="catch-list"></ul>
+    </section>
+    <p class="catches-empty" id="catches-empty" hidden>Try it: paste a fake key into ChatGPT, it'll show up here.</p>
 
-  <!-- ACTIVITY -->
-  <section id="view-activity" class="view">
-    <div class="view-head">
-      <div>
-        <h1>Audit log</h1>
-        <p class="lede">Every inspection, simulated send and policy change in this browser. Export it as JSON for a security review.</p>
-      </div>
-    </div>
-    <div class="card">
+    <section id="view-activity" class="card audit-card" hidden>
       <div class="card-head">
         <h2 class="card-title">Events <span id="log-count" class="muted"></span></h2>
         <div class="toolbar">
@@ -128,124 +79,138 @@
             <option value="redact">Redacted</option>
             <option value="allowed-clean">Clean</option>
             <option value="breached">Password found in breaches</option>
+            <option value="stopped">Stopped</option>
+            <option value="sent anyway">Sent anyway</option>
           </select>
           <button id="export-log" class="btn btn-secondary">Export JSON</button>
           <button id="clear-log" class="btn btn-quiet danger">Clear</button>
         </div>
       </div>
       <div id="activity-list"></div>
-    </div>
-  </section>
-
-  <!-- DASHBOARD -->
-  <section id="view-dashboard" class="view" aria-labelledby="dash-title">
-    <div class="view-head">
-      <div>
-        <h1 id="dash-title">Dashboard</h1>
-        <p class="lede">What AI Firewall caught and stopped in this browser (data stays here).</p>
-        <p id="status-line" class="status-line" role="status" hidden></p>
-      </div>
-    </div>
-    <div class="stat-grid">
-      <div class="card stat-card"><p class="caption">Inspections on this website</p><p class="stat-num num" id="stat-scans">0</p><p class="stat-sub" id="stat-scans-sub"></p></div>
-      <div class="card stat-card"><p class="caption">Flagged</p><p class="stat-num num" id="stat-flagged">0</p><p class="stat-sub" id="stat-flagged-sub"></p></div>
-      <div class="card stat-card"><p class="caption">Blocked</p><p class="stat-num num" id="stat-blocked">0</p><p class="stat-sub" id="stat-blocked-sub"></p></div>
-      <div class="card stat-card"><p class="caption">Password alerts</p><p class="stat-num num" id="stat-breached">0</p><p class="stat-sub" id="stat-breached-sub"></p></div>
-    </div>
-
-    <section id="ext-card" class="card ext-card" aria-labelledby="ext-title" aria-live="polite">
-      <div class="card-head"><h2 class="card-title ext-title" id="ext-title"><span class="brand-mark ext-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>From the Chrome extension</h2><span class="badge badge-low" id="ext-status"><span class="dot"></span>Not connected</span></div>
-      <div id="ext-body"></div>
     </section>
+  </section>
 
-    <div id="dash-empty" class="card dash-empty" hidden>
-      <div class="empty">
-        <span class="empty-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16v-5M12 16V7M17 16v-8"/></svg></span>
-        <p class="empty-title">Nothing checked on this website yet</p>
-        <p class="empty-text">Inspect a prompt on the Firewall tab. Trends, data types and recent activity from the Firewall tab appear here. Extension counts are in the card above.</p>
-        <a href="#firewall" id="dash-goto-firewall" class="btn btn-primary">Go to Firewall</a>
+  <!-- TRY IT: Firewall inspector + Northstar demo -->
+  <section id="view-try" class="view" aria-labelledby="try-title">
+    <div id="view-firewall">
+      <div class="view-head">
+        <div>
+          <h1 id="try-title">Try it</h1>
+          <p class="lede" id="firewall-title">Paste what you are about to send to ChatGPT, Claude or Gemini. AI Firewall checks it on this device and applies your policy.</p>
+        </div>
       </div>
+      <div class="console-grid">
+        <section class="card prompt-card" aria-labelledby="prompt-title">
+          <div class="card-head">
+            <h2 class="card-title" id="prompt-title">Prompt</h2>
+            <label class="btn btn-quiet attach-btn">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.5 8.5a5 5 0 01-7-7L14 4.5a3.3 3.3 0 014.7 4.7L10.2 17.7a1.7 1.7 0 01-2.4-2.4L15.5 7.6"/></svg>
+              Attach files
+              <input type="file" id="file-input" multiple hidden
+                accept=".txt,.md,.markdown,.csv,.json,.js,.ts,.py,.java,.go,.rb,.sh,.yaml,.yml,.xml,.html,.css,.sql,.log,.env,.ini,.cfg,.conf">
+            </label>
+          </div>
+          <label for="prompt-input" class="sr-only">Prompt to inspect</label>
+          <textarea id="prompt-input" class="prompt-input" spellcheck="false" aria-describedby="form-error"
+            placeholder="Paste the prompt you are about to send…"></textarea>
+          <p id="form-error" class="form-error" role="alert" hidden></p>
+          <div id="attachments" class="attachments"></div>
+
+          <!-- Mini Project 3: optional breach check (the page's only network call). Off by default. -->
+          <div class="breach-option">
+            <div class="switch-row">
+              <label for="breach-check">Check passwords against known breaches</label>
+              <input type="checkbox" id="breach-check" class="switch" aria-describedby="breach-privacy">
+            </div>
+            <p id="breach-privacy" class="breach-privacy">Your password stays on this device. Only a short scrambled code is checked online.</p>
+            <details class="how">
+              <summary>How this works</summary>
+              <p>When a prompt contains a password, your browser hashes it with SHA-1 and sends only the first 5 characters of the hash to the free <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> Pwned Passwords API. The password and its full hash never leave this browser, and only counts are saved. Have I Been Pwned sees the request (and your IP address), not the password. Runs on your next Inspect. Off again next time you open the page.</p>
+            </details>
+          </div>
+
+          <div class="console-actions">
+            <button id="scan-btn" class="btn btn-primary" title="Shortcut: Ctrl/Cmd + Enter" aria-keyshortcuts="Control+Enter Meta+Enter">Inspect</button>
+            <button id="clear-btn" class="btn btn-quiet">Clear</button>
+            <button type="button" id="run-demo" class="btn btn-secondary">Run the Northstar demo</button>
+          </div>
+        </section>
+
+        <section class="card result-card" aria-labelledby="result-title">
+          <div class="card-head">
+            <h2 class="card-title" id="result-title">Result</h2>
+            <span class="local-badge">On this device</span>
+          </div>
+          <div id="scan-result" class="scan-result" aria-live="polite"></div>
+          <!-- Breach-check summary, in its own live region so a breach answer is
+               announced on its own without re-reading the whole result. -->
+          <div id="breach-status" role="status"></div>
+          <div id="result-actions" class="result-actions" hidden>
+            <button id="send-btn" class="btn btn-secondary" disabled>Inspect first to send</button>
+          </div>
+        </section>
+      </div>
+      <p class="aside">Want this inside ChatGPT, Claude and Gemini? <a href="#setup" id="goto-install">Get the Chrome extension</a>.</p>
     </div>
 
-    <div id="dash-content">
-      <section class="card" aria-labelledby="trend-title">
-        <div class="card-head">
-          <h2 class="card-title" id="trend-title">Activity</h2>
-          <p class="legend-inline"><span class="key key-all"></span>Clean <span class="key key-flag"></span>Flagged <span class="muted" id="trend-range">· last 14 days</span></p>
+    <div id="view-assessment" hidden>
+      <div class="view-head">
+        <div>
+          <h2 id="assessment-title">Northstar demo</h2>
+          <p class="lede">A guided simulation with made-up data. Show a company what its staff could leak into AI tools, without touching anything real.</p>
         </div>
-        <div id="trend"></div>
-      </section>
-      <div class="dash-grid">
-        <section class="card" aria-labelledby="types-title">
-          <div class="card-head"><h2 class="card-title" id="types-title">Data types found</h2></div>
-          <div id="cat-bars"></div>
-        </section>
-        <section class="card" aria-labelledby="sev-title">
-          <div class="card-head"><h2 class="card-title" id="sev-title">Severity and outcomes</h2></div>
-          <p class="caption">Worst finding per inspection</p>
-          <div id="sev-stack"></div>
-          <ul id="sev-legend" class="legend-list"></ul>
-          <p class="caption section-gap">What the policy did</p>
-          <div id="outcome-stack"></div>
-          <ul id="outcome-legend" class="legend-list"></ul>
-        </section>
       </div>
-      <div class="dash-grid">
-        <section class="card" aria-labelledby="recent-title">
-          <div class="card-head"><h2 class="card-title" id="recent-title">Recent activity</h2><a href="#activity" id="goto-activity" class="link-quiet">View audit log</a></div>
-          <ul id="recent" class="recent-list"></ul>
-        </section>
-        <section class="card" aria-labelledby="posture-title">
-          <div class="card-head"><h2 class="card-title" id="posture-title">Policies in effect</h2><a href="#policies" id="goto-policies" class="link-quiet">Edit</a></div>
-          <ul id="posture-line" class="posture-list"></ul>
-        </section>
-      </div>
+      <div class="progress"><div id="assess-progress-fill" class="progress-fill"></div></div>
+      <div id="assessment-stage"></div>
     </div>
   </section>
 
-  <!-- INSTALL -->
-  <section id="view-install" class="view">
+  <!-- SETUP: Extension install + Policies -->
+  <section id="view-setup" class="view" aria-labelledby="setup-title">
     <div class="view-head">
       <div>
-        <h1>Chrome extension</h1>
-        <p class="lede">Runs the same checks inside ChatGPT, Claude and Gemini, before the prompt sends. Nothing is uploaded. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
+        <h1 id="setup-title">Setup</h1>
+        <p class="lede">Install the extension for ChatGPT, Claude and Gemini, then choose what happens to each kind of data. To try the checks without installing anything, use the <a href="#try" id="goto-firewall">Try it</a> tab.</p>
       </div>
     </div>
-    <div class="install-grid">
-      <section class="card" aria-labelledby="install-title">
-        <div class="card-head"><h2 class="card-title" id="install-title">Install in Chrome</h2><span class="local-badge">Free</span></div>
-        <p><a class="btn btn-primary" href="ai-firewall-extension.zip" download>Download the Chrome extension</a></p>
-        <ol class="install-steps">
-          <li>Unzip <code>ai-firewall-extension.zip</code>. You get a folder with <code>manifest.json</code> at the top of it.</li>
-          <li>In Chrome or Edge, go to <code>chrome://extensions</code> or <code>edge://extensions</code>.</li>
-          <li>Turn on <b>Developer mode</b> in the top-right corner.</li>
-          <li>Click <b>Load unpacked</b> and choose the folder that contains <code>manifest.json</code>.</li>
-          <li>Pin it from the Extensions menu, then open ChatGPT, Claude, or Gemini and look for <b>AI Firewall · Protected locally</b>.</li>
-        </ol>
-        <p class="posture-note">Keep the folder on your computer. Chrome runs the extension from it.</p>
-      </section>
-      <section class="card" aria-labelledby="quick-title">
-        <div class="card-head"><h2 class="card-title" id="quick-title">Quick test</h2></div>
-        <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. The extension should stop it before it sends.</p>
-        <pre class="install-sample">Summarize this fake deployment note:
+    <div id="view-install">
+      <div class="install-grid">
+        <section class="card" aria-labelledby="install-title">
+          <div class="card-head"><h2 class="card-title" id="install-title">Install in Chrome</h2><span class="local-badge">Free</span></div>
+          <p><a class="btn btn-primary" href="ai-firewall-extension.zip" download>Download the Chrome extension</a></p>
+          <ol class="install-steps">
+            <li>Unzip <code>ai-firewall-extension.zip</code>. You get a folder with <code>manifest.json</code> at the top of it.</li>
+            <li>In Chrome or Edge, go to <code>chrome://extensions</code> or <code>edge://extensions</code>.</li>
+            <li>Turn on <b>Developer mode</b> in the top-right corner.</li>
+            <li>Click <b>Load unpacked</b> and choose the folder that contains <code>manifest.json</code>.</li>
+            <li>Pin it from the Extensions menu, then open ChatGPT, Claude, or Gemini and look for <b>AI Firewall · Protected locally</b>.</li>
+          </ol>
+          <p class="posture-note">Keep the folder on your computer. Chrome runs the extension from it.</p>
+        </section>
+        <section class="card" aria-labelledby="quick-title">
+          <div class="card-head"><h2 class="card-title" id="quick-title">Quick test</h2></div>
+          <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. The extension should stop it before it sends.</p>
+          <pre class="install-sample">Summarize this fake deployment note:
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 Customer email: dana@example.com
 Test card: 4111 1111 1111 1111</pre>
-        <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies and flag log in Chrome. On this site it shares counts only (never prompt text) with the Dashboard.</p>
-      </section>
-    </div>
-  </section>
-
-  <!-- ASSESSMENT -->
-  <section id="view-assessment" class="view">
-    <div class="view-head">
-      <div>
-        <h1>Assessment</h1>
-        <p class="lede">A guided simulation with made-up data. Show a company what its staff could leak into AI tools, without touching anything real.</p>
+          <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies and flag log in Chrome. On this site it shares counts and labels only (never prompt text) with the Dashboard.</p>
+        </section>
       </div>
     </div>
-    <div class="progress"><div id="assess-progress-fill" class="progress-fill"></div></div>
-    <div id="assessment-stage"></div>
+    <div id="view-policies" class="setup-policies">
+      <div class="view-head">
+        <div>
+          <h2>Policies</h2>
+          <p class="lede">Choose what happens to each kind of data. <b>Warn</b> shows the risk, <b>Redact</b> masks it and lets the prompt through, <b>Block</b> stops the send.</p>
+        </div>
+      </div>
+      <div class="card"><div id="policy-list"></div></div>
+      <div class="reset-row">
+        <button id="reset-all" class="btn btn-secondary danger">Reset everything</button>
+        <span class="reset-note">Restores default policies, clears the audit log and the prompt box.</span>
+      </div>
+    </div>
   </section>
 
 </main>

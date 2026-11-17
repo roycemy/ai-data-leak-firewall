@@ -188,6 +188,149 @@
 
   function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 
+  var WEEK = 7 * DAY;
+  var CATCH_OUTCOME = {
+    block: 'stopped',
+    warn: 'warned',
+    redact: 'redacted',
+    allow: 'allowed',
+    'allowed-clean': 'clean',
+    'sent-send': 'sent anyway',
+    'sent-redacted': 'redacted',
+    cancelled: 'stopped',
+    override: 'sent anyway',
+    stopped: 'stopped',
+    'sent anyway': 'sent anyway',
+    allowed: 'allowed',
+    redacted: 'redacted',
+    warned: 'warned',
+    clean: 'clean'
+  };
+
+  function startOfDay(t) {
+    var d = new Date(t);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+
+  /* isWebsiteStop(e) -> true when this website blocked a prompt (nothing sent). */
+  function isWebsiteStop(e) { return e && e.action === 'block'; }
+
+  /* stops(events, extCount, from, to) -> website blocks in [from, to) plus the
+   * extension's uncapped stop count (summary.stoppedToday / stoppedWeek). */
+  function stops(events, extCount, from, to) {
+    var n = 0;
+    (events || []).forEach(function (e) {
+      if (isWebsiteStop(e) && e.ts >= from && e.ts < to) n++;
+    });
+    extCount = Math.floor(Number(extCount));
+    if (extCount > 0) n += extCount;
+    return n;
+  }
+
+  // Hash aliases for the three tabs. Unknown values fall back to Dashboard.
+  var HASH_TO_TAB = {
+    dashboard: 'dashboard',
+    try: 'try', 'try-it': 'try', firewall: 'try', assessment: 'try',
+    setup: 'setup', policies: 'setup', extension: 'setup', install: 'setup',
+    activity: 'dashboard', audit: 'dashboard'
+  };
+  var CANONICAL_HASH = ['dashboard', 'try', 'setup', 'activity', 'audit', 'assessment'];
+  function tabFor(name) { return HASH_TO_TAB[name] || 'dashboard'; }
+  function canonicalHash(name) {
+    if (name === 'activity' || name === 'audit' || name === 'assessment') return name;
+    return tabFor(name);
+  }
+  function isCanonicalHash(name) { return CANONICAL_HASH.indexOf(name) !== -1; }
+  /* shouldReplaceHash(current, next) -> true when the URL hash must be corrected
+   * without pushing a history entry (unknown or old alias). Canonical hashes
+   * (tab clicks, See all) still push so Back works. */
+  function shouldReplaceHash(current, next) {
+    return current !== next && !isCanonicalHash(current);
+  }
+
+  /* hero({ connected, stopsToday, stopsWeek }) -> { kind, text } for the
+   * large Dashboard sentence. "Working…" is only used when the extension is connected. */
+  function hero(opts) {
+    opts = opts || {};
+    if (!opts.connected) {
+      return { kind: 'install', text: 'Install the extension to start protecting your AI chats' };
+    }
+    if (opts.stopsToday > 0) {
+      return { kind: 'ok', text: 'Working. ' + plural(opts.stopsToday, 'risky prompt') + ' stopped today' };
+    }
+    if (opts.stopsWeek > 0) {
+      return { kind: 'ok', text: 'Working. ' + plural(opts.stopsWeek, 'risky prompt') + ' stopped this week' };
+    }
+    return { kind: 'ok', text: 'Working. Nothing risky yet today' };
+  }
+
+  /* passwordAlert(events) -> a red status line when any inspection found a
+   * breached password, or null. Counts inspections, not distinct passwords. */
+  function passwordAlert(events) {
+    var n = (events || []).filter(function (e) { return e.breached > 0; }).length;
+    if (!n) return null;
+    return { kind: 'critical', text: n === 1
+      ? '◆ 1 prompt had a password found in known breaches. Change that password.'
+      : '◆ ' + n + ' prompts had passwords found in known breaches. Change those passwords.' };
+  }
+
+  /* sentAnyway(events, extSummary) -> website simulated sends plus extension overrides. */
+  function sentAnyway(events, extSummary) {
+    var n = (events || []).filter(function (e) { return e.action === 'sent-send'; }).length;
+    if (extSummary && extSummary.byOutcome) n += (extSummary.byOutcome.override || 0) + (extSummary.byOutcome.allowed || 0);
+    return n;
+  }
+
+  /* catchLabel(e, categories) -> a short finding label for a website event. */
+  function catchLabel(e, categories) {
+    if (!e) return 'Confidential data';
+    var action = String(e.action || '');
+    if (action.indexOf('policy:') === 0) return describe(e, categories).title;
+    if (action.indexOf('sent-') === 0) return 'Simulated send';
+    var found = Object.keys(categories || {}).filter(function (c) { return e.byCategory && e.byCategory[c] > 0; });
+    if (!found.length) return e.total ? 'Confidential data' : 'No sensitive data';
+    return categories[found[0]].label;
+  }
+
+  /* catchOutcome(outcome) -> { word, cls } for the Recent catches pill.
+   * "redacted" is shown as "Removed" (cobalt). Stopped is red, Sent anyway is amber. */
+  function catchOutcome(outcome) {
+    var map = {
+      stopped: { word: 'Stopped', cls: 'badge-critical' },
+      redacted: { word: 'Removed', cls: 'badge-info' },
+      removed: { word: 'Removed', cls: 'badge-info' },
+      'sent anyway': { word: 'Sent anyway', cls: 'badge-high' },
+      warned: { word: 'Warned', cls: 'badge-high' },
+      allowed: { word: 'Allowed', cls: 'badge-ok' },
+      clean: { word: 'Clean', cls: 'badge-ok' }
+    };
+    return map[outcome] || { word: String(outcome || ''), cls: 'badge-low' };
+  }
+
+  /* websiteCatch(e, categories) -> { label, outcome, site, time } or null (policy/clean skipped for Recent catches). */
+  function websiteCatch(e, categories) {
+    if (!e || !isScan(e) || !e.total) return null;
+    var outcome = CATCH_OUTCOME[e.action];
+    if (!outcome) return null;
+    return { label: catchLabel(e, categories), outcome: outcome, site: 'This website', time: e.ts, source: 'website' };
+  }
+
+  /* mergeCatches(events, extRecent, categories, limit) -> newest first, website + extension. */
+  function mergeCatches(events, extRecent, categories, limit) {
+    var list = [];
+    (events || []).forEach(function (e) {
+      var c = websiteCatch(e, categories);
+      if (c) list.push(c);
+    });
+    (extRecent || []).forEach(function (e) {
+      if (!e) return;
+      list.push({ label: e.label, outcome: e.outcome, site: e.site, time: e.time, source: 'extension' });
+    });
+    list.sort(function (a, b) { return b.time - a.time; });
+    return list.slice(0, limit || 8);
+  }
+
   global.DatoDashboard = {
     SEVERITIES: SEVERITIES,
     isScan: isScan,
@@ -200,7 +343,22 @@
     stacked: stacked,
     describe: describe,
     breachText: breachText,
-    timeAgo: timeAgo
+    timeAgo: timeAgo,
+    startOfDay: startOfDay,
+    stops: stops,
+    hero: hero,
+    passwordAlert: passwordAlert,
+    sentAnyway: sentAnyway,
+    catchLabel: catchLabel,
+    catchOutcome: catchOutcome,
+    websiteCatch: websiteCatch,
+    mergeCatches: mergeCatches,
+    WEEK: WEEK,
+    HASH_TO_TAB: HASH_TO_TAB,
+    tabFor: tabFor,
+    canonicalHash: canonicalHash,
+    isCanonicalHash: isCanonicalHash,
+    shouldReplaceHash: shouldReplaceHash
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined' && module.exports) { module.exports = globalThis.DatoDashboard; }
