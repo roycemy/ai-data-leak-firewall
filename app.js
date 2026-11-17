@@ -343,8 +343,10 @@
 
     if (outcome.breached) {
       var items = outcome.results.filter(function (r) { return r.count > 0; }).map(function (r) {
-        return '<li>' + escapeHTML(findings[r.findingIndex].masked) + ': seen <b>' +
-          r.count.toLocaleString() + '</b> times in known breaches</li>';
+        // Show only the last 3 characters of the masked finding (trailing full stop removed).
+        var ending = findings[r.findingIndex].masked.replace(/[.!?,;]+$/, '').slice(-3);
+        return '<li>Password ending <code class="masked">' + escapeHTML(ending) + '</code> seen <b>' +
+          r.count.toLocaleString() + '</b> times</li>';
       }).join('');
       showBreachNote('bad', '⛔ <b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
         ' found in known breaches.</b> Attackers try these first. Change it everywhere it is used.' + SENT_NOTE + '<ul>' + items + '</ul>');
