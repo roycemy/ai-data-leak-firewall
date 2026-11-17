@@ -14,26 +14,21 @@
 
 <header class="topbar">
   <div class="brand">
-    <span class="brand-mark" aria-hidden="true">A</span>
+    <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
     <div>
       <div class="brand-name">AI Firewall</div>
       <div class="brand-tag">Stops data leaks into AI tools</div>
     </div>
   </div>
-  <nav class="nav">
+  <nav class="nav" aria-label="Sections">
     <a href="#firewall" id="nav-firewall" class="nav-link active">Firewall</a>
-    <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
+    <a href="#dashboard" id="nav-dashboard" class="nav-link">Dashboard</a>
     <a href="#activity" id="nav-activity" class="nav-link">Audit log</a>
-    <a href="#dashboard" id="nav-dashboard" class="nav-link">Risk dashboard</a>
-    <a href="#assessment" id="nav-assessment" class="nav-link nav-cta">Assessment</a>
+    <a href="#policies" id="nav-policies" class="nav-link">Policies</a>
+    <a href="#assessment" id="nav-assessment" class="nav-link">Assessment</a>
     <a href="#install" id="nav-install" class="nav-link">Extension</a>
   </nav>
 </header>
-
-<div class="safety-strip">
-  <span class="pulse-dot"></span>
-  Defensive security tool — every scan runs locally in your browser. No prompt, file, or event is transmitted. The optional breach check sends only a 5-character hash prefix. Assessment mode uses synthetic data only.
-</div>
 
 <main class="main" id="main" tabindex="-1">
 
@@ -167,7 +162,7 @@
       <h1>Put AI Firewall in front of every AI tool.</h1>
       <p class="lede">The Chrome extension runs the same checks right inside ChatGPT, Claude, and Gemini, and stops the prompt before it sends. Everything stays on the computer. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
     </div>
-    <div class="console-grid">
+    <div class="install-grid">
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Install in Chrome</span><span class="local-badge">free · local only</span></div>
         <p><a class="btn btn-primary" href="dato-extension.zip" download>Download the Chrome extension</a></p>
@@ -205,8 +200,8 @@ Test card: 4111 1111 1111 1111</pre>
 </main>
 
 <footer class="footer">
-  <span>AI Firewall · local-first AI data-leak protection</span>
-  <span class="footer-note">Demo build — defensive use only. Detection runs entirely in the browser. Breach data: <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a>.</span>
+  <span>AI Firewall runs in your browser. Nothing you paste is uploaded; the optional breach check sends only a 5-character hash prefix.</span>
+  <span>Breach data: <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> · Demo build, defensive use only</span>
 </footer>
 
 <script src="detectors.js"></script>
