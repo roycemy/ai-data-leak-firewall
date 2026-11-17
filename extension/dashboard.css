@@ -7,7 +7,7 @@
 body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 24px; border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 11px; }
-.mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--teal); color: #fff; font-weight: 800; }
+.mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: #2F5BFF; color: #fff; font: 800 18px/1 system-ui, -apple-system, sans-serif; }
 h1 { margin: 0; font-size: 19px; }
 .brand p { margin: 0; color: var(--muted); font-size: 12px; }
 .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

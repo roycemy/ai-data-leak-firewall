@@ -39,7 +39,7 @@ This is the same repo, expanded on purpose for Mini Project 3. Mini Project 2 is
 | UI review 2: one red signal per problem in the result, owner wording on screen ("Your password stays on this device", "Your policy blocks passwords and keys", "Password in the message"), passwords masked to their last two characters, Dashboard as home with a status line, "Password alerts", a send no longer logs a second inspection, the Extension page in the shared style, and type sizes kept to the scale | `DESIGN.md`, `detectors.js`, `app.js`, `dashboard.js`, `index.html`, `styles.css`, tests |
 | UI polish after review: a tighter design system first (DESIGN.md), then a calmer Firewall (one primary button, a switch with a short privacy line, one verdict banner, the breach result inside the password's row), a Dashboard built as the owner's home (stats, 14-day SVG trend, data types, severity and outcomes, recent activity, policies, empty state, "this device only" note) an audit log that becomes stacked cards on a phone, and phone tabs in two even rows | `DESIGN.md`, `styles.css`, `index.html`, `app.js`, `dashboard.js`, `tests/dashboard.test.js` |
 
-The Chrome extension's visible name is now AI Firewall as well, and `dato-extension.zip` was rebuilt. Internal ids (`dato_events`, `dato-*` classes, the ZIP filename) are unchanged so saved data and the download link keep working.
+The Chrome extension's visible name is now AI Firewall as well. The download file is `ai-firewall-extension.zip`, with `manifest.json` at the zip root so Edge or Chrome "Load unpacked" works on the extracted folder. Internal ids (`dato_events`, `dato-*` classes) are unchanged so saved data keeps working.
 
 **Where the agent's build went beyond the basic request (Mini Project 3):** the core ask was an opt-in checkbox and a result line. The agent also added a "Breach check" column and a "Password found in breaches" filter to the audit log and a dashboard card for breached passwords (now "Password alerts"). It only checks passwords the detector already flagged (the "password is …", "password = …" or "password: …" forms), so a password pasted on its own, with no word like "password" in front of it, is not checked.
 
@@ -70,7 +70,7 @@ The app opens on the **Dashboard** once this browser has logged something, and o
 2. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
 3. **Dashboard tab (the first tab):** the owner's view of this browser's log. One status line under the title says whether anything needs you ("◆ 1 prompt had a password found in known breaches. Change that password.") or that it is working ("✓ Working. 4 risky prompts blocked in the last 14 days."). Below it: inspections, flagged, blocked and password-alert counts, a 14-day trend (7 days with a short hint until there is activity on 3 days), data types found, severity and outcomes, the last 5 events and the policies in effect. It shows a "No activity yet" card until the first inspection.
 4. **Audit log tab:** filter events (including *Password found in breaches*), export them as JSON, or clear them. On a phone each event is a small card.
-5. **Extension tab (last tab):** download `dato-extension.zip` and follow the install steps. The extension checks prompts on ChatGPT, Claude, and Gemini before they send.
+5. **Extension tab (last tab):** download `ai-firewall-extension.zip` and follow the install steps. Unzip it and choose the folder that contains `manifest.json` (it is at the zip root, not inside a nested `extension/` folder). The extension checks prompts on ChatGPT, Claude, and Gemini before they send. Version 1.2.0 blocks SSNs and payment cards by default like API keys, offers **Remove and send** in the stop dialog, and uses the cobalt A mark.
 
 Empty or invalid input (nothing to inspect, file over 2 MB, unreadable file) shows a message in the page. Nothing uses pop-up dialogs. Every control can be reached with the Tab key.
 
@@ -146,8 +146,8 @@ The second one checks that the download is a real ZIP file.
 | `tests/*.test.js` | Tests with Node's built-in runner: detectors, false flags, extension store, ZIP, breach check, dashboard |
 | `styles.css` | Styles following the design system in `DESIGN.md` |
 | `extension/` | Chrome extension (Manifest V3) for ChatGPT, Claude, and Gemini |
-| `dato-extension.zip` | Zipped copy of `extension/` for the download button |
-| `tools/build-zip.py` | Rebuilds `dato-extension.zip` as a real ZIP (`python tools/build-zip.py`) |
+| `ai-firewall-extension.zip` | Zipped copy of `extension/` for the download button (`manifest.json` at the zip root) |
+| `tools/build-zip.py` | Rebuilds `ai-firewall-extension.zip` as a real ZIP (`python tools/build-zip.py`) |
 
 State lives in `app.js`: `policies` (object, class to action), `events` (audit log array), `attachedFiles`, and `inspectedText` (the exact text the last Inspect ran on, which Send must still match). Policies and events are saved to `localStorage` (events hold counts only, including the breach-check counts `breachChecked` and `breached`); clearing site data or pressing Reset everything wipes them. Planning docs: [PROPOSAL.md](PROPOSAL.md), [PRD.md](PRD.md), [DESIGN.md](DESIGN.md), [AGENTS.md](AGENTS.md).
 

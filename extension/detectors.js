@@ -59,12 +59,15 @@
         var re = /\b(?:password|passcode|passphrase|pin|api[ _-]?key|secret[ _-]?key|access[ _-]?token|auth[ _-]?token|session[ _-]?token|private[ _-]?key|ssn|social security(?:\s*number)?|credit[ _-]?card(?:\s*number)?|card[ _-]?number|cvv|cvc|security[ _-]?code|routing[ _-]?number|bank[ _-]?account(?:\s*number)?)\b\s*(?:is|=|:|->|-)\s*([^\s,;]{3,})/gi, m;
         while ((m = re.exec(text)) !== null) {
           var value = m[1].replace(/[.!?]+$/, '');
+          if (valueIsStructuredId(value)) continue;
           var wordy = /^[A-Za-z]+$/.test(value);
           if (wordy && (value.length < 6 || COMMON_WORDS.test(value))) continue;
-          out.push({ index: m.index, match: m[0] });
+          out.push({ index: m.index, match: m[0], value: value });
         }
         return out;
       } },
+    { id: 'implied-secret', category: 'secrets', severity: 'high', label: 'Credential named in plain language',
+      detect: function (text) { return detectImpliedSecret(text); } },
     { id: 'unknown-token', category: 'secrets', severity: 'medium', tentative: true, label: 'Possible key or token (unrecognized format)',
       detect: function (text) {
         var out = [];
@@ -83,9 +86,9 @@
     { id: 'personal-fact-named', category: 'pii', severity: 'medium', tentative: true, label: 'Personal detail named in plain language',
       pattern: /\b(?:my|her|his|their|our)\s+(?:salary|compensation|date of birth|birthday|social security|ssn|passport|driver'?s?\s*license|medical record|diagnosis|prescription|home address)\b\s*(?:is|=|:)\s*[^\s,;]{2,}/gi },
     { id: 'ssn', category: 'pii', severity: 'critical', label: 'US Social Security number',
-      pattern: /\b\d{3}-\d{2}-\d{4}\b/g },
+      detect: function (text) { return detectSsn(text); } },
     { id: 'email-address', category: 'pii', severity: 'medium', label: 'Email address',
-      pattern: /\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g, maxFindings: 25 },
+      detect: function (text) { return detectEmail(text); }, maxFindings: 25 },
     { id: 'us-phone', category: 'pii', severity: 'medium', label: 'US phone number',
       pattern: /\b(?:\+1[\s.\-]?)?\(?\d{3}\)?[\s.\-]\d{3}[\s.\-]\d{4}\b/g, maxFindings: 25 },
     { id: 'date-of-birth', category: 'pii', severity: 'high', label: 'Date of birth',
@@ -172,6 +175,130 @@
       return [{ index: hits[0], match: text.slice(hits[0], hits[0] + 120) + '\u2026', heuristic: true }];
     }
     return [];
+  }
+
+
+  function isHighEntropy(value) {
+    if (!value || value.length < 8) return false;
+    if (/^[A-Za-z]+$/.test(value)) return false;
+    if (typeof ORDINARY_WORDS !== 'undefined' && ORDINARY_WORDS.test(value)) return false;
+    if (typeof COMMON_WORDS !== 'undefined' && COMMON_WORDS.test(value)) return false;
+    var classes = 0;
+    if (/[a-z]/.test(value)) classes++;
+    if (/[A-Z]/.test(value)) classes++;
+    if (/\d/.test(value)) classes++;
+    if (/[^A-Za-z0-9]/.test(value)) classes++;
+    return classes >= 3;
+  }
+
+  // SSNs and Luhn-valid cards already have their own rules; "SSN is 123-45-6789" is not also a named password.
+  function valueIsStructuredId(value) {
+    var v = String(value || '').replace(/[.,;!?]+$/, '');
+    var digits = v.replace(/[ \-]/g, '');
+    if (/^\d{3}[ \-]?\d{2}[ \-]?\d{4}$/.test(v)) return true;
+    if (digits.length >= 13 && digits.length <= 19 && /^\d+$/.test(digits) && luhnValid(digits)) return true;
+    return false;
+  }
+
+  function emailIsInsideCredentialUrl(text, index) {
+    return /[a-z][a-z0-9+\-.]*:\/\/[^\s"'<>]*:$/i.test(text.slice(0, index));
+  }
+
+  function detectSsn(text) {
+    var out = [];
+    var seen = {};
+    function add(index, match) {
+      var key = index + ':' + match;
+      if (seen[key]) return;
+      seen[key] = true;
+      out.push({ index: index, match: match });
+    }
+    var m;
+    var dashed = /\b\d{3}-\d{2}-\d{4}\b/g;
+    while ((m = dashed.exec(text)) !== null) add(m.index, m[0]);
+    var context = /\b(?:social(?:\s+security(?:\s+number)?)?|ssn|tax(?:es)?|ein|tin|itin|nine\s+digits|9\s+digits)\b/i;
+    function nearContext(index, len) {
+      var from = Math.max(0, index - 60);
+      var to = Math.min(text.length, index + len + 40);
+      return context.test(text.slice(from, to));
+    }
+    var spaced = /\b\d{3} \d{2} \d{4}\b/g;
+    while ((m = spaced.exec(text)) !== null) {
+      if (nearContext(m.index, m[0].length)) add(m.index, m[0]);
+    }
+    var bare = /\b\d{9}\b/g;
+    while ((m = bare.exec(text)) !== null) {
+      if (nearContext(m.index, m[0].length)) add(m.index, m[0]);
+    }
+    return out;
+  }
+
+  function detectImpliedSecret(text) {
+    var out = [];
+    var cue = /\b(?:magic\s+word|passcode|passphrase|password|login|pin|creds|credentials|combo|secret)\b/gi, cueMatch;
+    while ((cueMatch = cue.exec(text)) !== null) {
+      var windowStart = cueMatch.index;
+      var windowText = text.slice(windowStart, Math.min(text.length, windowStart + cueMatch[0].length + 80));
+      var after = /(?:is|=|:)\s*([^\s,;]{6,})/i.exec(windowText);
+      if (!after) continue;
+      var value = after[1].replace(/[.!?]+$/, '');
+      if (valueIsStructuredId(value) || !isHighEntropy(value)) continue;
+      var fullEnd = windowStart + windowText.indexOf(after[0]) + after[0].length;
+      if (fullEnd > 0 && after[0].slice(-1) && /[.,!?]/.test(text.charAt(fullEnd - 1))) fullEnd -= 1;
+      var match = text.slice(windowStart, fullEnd);
+      out.push({ index: windowStart, match: match, value: value });
+    }
+    return out;
+  }
+
+  function detectEmail(text) {
+    var out = [];
+    var re = /\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/g, m;
+    while ((m = re.exec(text)) !== null) {
+      if (emailIsInsideCredentialUrl(text, m.index)) continue;
+      out.push({ index: m.index, match: m[0] });
+    }
+    return out;
+  }
+
+  function policyCategory(finding) {
+    if (finding && (finding.ruleId === 'ssn' || finding.ruleId === 'credit-card')) return 'secrets';
+    return finding ? finding.category : '';
+  }
+
+  var REDACT_NAMES = {
+    'credit-card': 'CARD',
+    'ssn': 'SSN',
+    'email-address': 'EMAIL',
+    'aws-access-key': 'AWS KEY',
+    'github-token': 'GITHUB TOKEN',
+    'openai-key': 'API KEY',
+    'anthropic-key': 'API KEY',
+    'slack-token': 'SLACK TOKEN',
+    'stripe-live-key': 'API KEY',
+    'google-api-key': 'API KEY',
+    'jwt': 'TOKEN',
+    'private-key-block': 'PRIVATE KEY',
+    'db-connection-string': 'CONNECTION STRING',
+    'hardcoded-password': 'PASSWORD',
+    'basic-auth-url': 'CREDENTIALS',
+    'credential-named': 'PASSWORD',
+    'implied-secret': 'PASSWORD',
+    'us-phone': 'PHONE',
+    'date-of-birth': 'DATE OF BIRTH',
+    'passport-number': 'PASSPORT',
+    'drivers-license': 'LICENSE',
+    'street-address': 'ADDRESS',
+    'iban': 'IBAN',
+    'routing-number': 'ACCOUNT',
+    'financial-figures': 'FIGURE',
+    'invoice-reference': 'INVOICE'
+  };
+
+  function redactToken(f) {
+    var name = REDACT_NAMES[f.ruleId];
+    if (!name) name = String(f.label || f.ruleId).replace(/\s*\(.*\)\s*/g, '').toUpperCase();
+    return '[REDACTED ' + name + ']';
   }
 
   function luhnValid(digits) {
@@ -263,7 +390,7 @@
     var out = text;
     for (var i = 0; i < spans.length; i++) {
       var f = spans[i];
-      out = out.slice(0, f.index) + '[REDACTED · ' + f.label.toUpperCase() + ']' + out.slice(f.index + f.length);
+      out = out.slice(0, f.index) + redactToken(f) + out.slice(f.index + f.length);
     }
     if (findings.some(function (f) { return f.heuristic && f.category === 'source'; })) {
       out = '[REDACTED · PROPRIETARY SOURCE CODE — share only the function or error message you need help with]\n\n' + out;
@@ -276,7 +403,8 @@
     RULES: RULES.map(function (r) { return { id: r.id, category: r.category, severity: r.severity, label: r.label }; }),
     scan: scan,
     redact: redact,
-    luhnValid: luhnValid
+    luhnValid: luhnValid,
+    policyCategory: policyCategory
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined' && module.exports) { module.exports = globalThis.DatoDetect; }
