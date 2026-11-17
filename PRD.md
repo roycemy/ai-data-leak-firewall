@@ -1,4 +1,4 @@
-# PRD — Dato web console
+# PRD — AI Firewall web console
 
 ## Goal
 Let a person check a prompt or file for confidential data before it goes to an AI tool, apply a policy, and keep a local record.

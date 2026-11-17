@@ -1,18 +1,18 @@
-# Dato: AI data-leak firewall
+# AI Firewall: AI data-leak firewall
 
 **Stop confidential data from entering AI tools — without stopping people from using AI.**
 
-Dato is a local-first AI data-leak firewall. It inspects prompts and files **before** they reach ChatGPT, Claude, or any other LLM, detects confidential content, and applies your policy: **warn**, **redact**, or **block**. Every inspection runs entirely in the browser — no prompt, file, or audit event is ever transmitted.
+AI Firewall is a local-first AI data-leak firewall. It inspects prompts and files **before** they reach ChatGPT, Claude, or any other LLM, detects confidential content, and applies your policy: **warn**, **redact**, or **block**. Every inspection runs entirely in the browser — no prompt, file, or audit event is ever transmitted.
 
 **Live:** https://roycemy.github.io/ai-data-leak-firewall/
 
 ## Where this repo came from
 
-This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site has an Extension tab to download it.
+This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (originally called Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site has an Extension tab to download it.
 
 ## How to use
 
-1. **Firewall tab (opens first):** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). Dato shows what it found and what your policy says to do. **Send** is only available after an inspection, and only while the text is exactly what was inspected. If you edit the prompt afterwards, inspect again.
+1. **Firewall tab (opens first):** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). AI Firewall shows what it found and what your policy says to do. **Send** is only available after an inspection, and only while the text is exactly what was inspected. If you edit the prompt afterwards, inspect again.
 2. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
 3. **Audit log tab:** filter events, export them as JSON, or clear them.
 4. **Risk dashboard tab:** totals and charts computed from the log.
@@ -34,7 +34,7 @@ PROPOSAL.md was rewritten in my words after the code was written. The original d
 
 ## Why
 
-Employees paste customer records, credentials, source code, contracts, and financials into AI tools every day. Most companies find out after the fact, if ever. Dato makes the risk visible and enforceable at the moment it happens.
+Employees paste customer records, credentials, source code, contracts, and financials into AI tools every day. Most companies find out after the fact, if ever. AI Firewall makes the risk visible and enforceable at the moment it happens.
 
 ## What it does
 
@@ -108,11 +108,11 @@ The first submission is commit `03cb8bf`. These changes were made afterwards by 
 
 ## Safety & scope
 
-Dato is a **defensive** security tool.
+AI Firewall is a **defensive** security tool.
 
 - All detection is local; the web app's "Send to AI" action is simulated and performs no network call.
 - The assessment mode only ever uses fabricated data for a fictional company.
-- Dato does not test, probe, or interact with any third party's systems or data. Real assessments require written authorization and synthetic/canary data.
+- AI Firewall does not test, probe, or interact with any third party's systems or data. Real assessments require written authorization and synthetic/canary data.
 - Detection is best-effort pattern matching, not a guarantee. It is a demo of the product concept, not a certified control.
 
 ## Roadmap

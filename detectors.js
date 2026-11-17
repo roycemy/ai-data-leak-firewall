@@ -1,4 +1,4 @@
-/* Dato Detection Engine
+/* AI Firewall Detection Engine
  * Local-first confidential-data detection for prompts and files.
  * All inspection runs in the browser. Nothing is transmitted.
  */

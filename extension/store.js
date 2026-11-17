@@ -1,4 +1,4 @@
-/* Dato activity store rules: what a flag event may contain, retention, and the
+/* AI Firewall activity store rules: what a flag event may contain, retention, and the
  * numbers the dashboard shows. Pure functions, shared by background.js,
  * dashboard.js and the Node tests.
  *
@@ -59,7 +59,7 @@
   function startOfDay(t) { var d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
 
   /* Dashboard numbers for the last `days` days. Empty input gives zeros.
-   *   flagged     every event (a prompt Dato found something in)
+   *   flagged     every event (a prompt AI Firewall found something in)
    *   high        flagged prompts whose worst finding was critical or high
    *   stopped     the user went back, so nothing was sent
    *   sentThrough the user chose Send anyway (or policy allowed it)

@@ -1,6 +1,6 @@
-/* Dato — Authorized Synthetic Assessment
+/* AI Firewall — Authorized Synthetic Assessment
  * A guided, defensive demo: it generates obviously fake sensitive data for a
- * fictional company and measures what Dato catches before it would reach an
+ * fictional company and measures what AI Firewall catches before it would reach an
  * AI tool. No real company, person, credential, or network is involved.
  */
 (function () {
@@ -78,7 +78,7 @@
       '<div class="assess-kicker">Authorized demo · synthetic data only</div>' +
       '<h3>AI data-leak assessment</h3>' +
       '<p>This simulation shows what happens when employees at <b>' + FAKE.company + '</b> paste everyday work into an AI assistant, ' +
-      'first without protection and then behind Dato. Every secret, person, and number is fabricated for this demo. Nothing is sent anywhere — every scan runs locally in this browser.</p>' +
+      'first without protection and then behind AI Firewall. Every secret, person, and number is fabricated for this demo. Nothing is sent anywhere — every scan runs locally in this browser.</p>' +
       '<ul class="assess-list">' +
       '<li>4 realistic workplace scenarios</li>' +
       '<li>Clearly fake credentials and identities</li>' +
@@ -102,9 +102,9 @@
       '<h3>' + s.title + '</h3>' +
       '<p class="assess-task">' + s.task + '</p>' +
       '<div class="compare">' +
-      '  <div class="compare-col compare-danger"><div class="compare-head">Without Dato</div>' +
+      '  <div class="compare-col compare-danger"><div class="compare-head">Without AI Firewall</div>' +
       '    <div class="compare-big">' + unprotected + '</div><div class="compare-sub">confidential item' + (unprotected === 1 ? '' : 's') + ' would reach the AI provider</div></div>' +
-      '  <div class="compare-col compare-safe"><div class="compare-head">With Dato</div>' +
+      '  <div class="compare-col compare-safe"><div class="compare-head">With AI Firewall</div>' +
       '    <div class="compare-big">0</div><div class="compare-sub">leave the device — action: <b>' + res.action.toUpperCase() + '</b></div></div>' +
       '</div>' +
       '<div class="prompt-preview"><div class="prompt-preview-head">The prompt the employee tried to send (synthetic)</div><pre>' + escapeHTML(s.prompt) + '</pre></div>' +
@@ -141,7 +141,7 @@
       '<div class="assess-kicker">Assessment report · ' + FAKE.company + '</div>' +
       '<h3>' + totalFindings + ' confidential items stopped before reaching an AI tool</h3>' +
       '<p>Across ' + scenarios.length + ' everyday tasks, an unprotected workflow would have exposed <b>' + totalFindings +
-      '</b> pieces of synthetic confidential data. Dato caught every one locally, before anything left the browser.</p>' +
+      '</b> pieces of synthetic confidential data. AI Firewall caught every one locally, before anything left the browser.</p>' +
       '<div class="chips">' + catLine + '</div>' +
       '<table class="log-table"><thead><tr><th>Scenario</th><th>Items caught</th><th>Policy action</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="recommendations"><div class="rec-head">Recommended rollout</div>' +
@@ -157,7 +157,7 @@
       '</div></div>';
     el('assess-export').addEventListener('click', function () {
       var report = {
-        product: 'Dato — AI data-leak firewall',
+        product: 'AI Firewall — AI data-leak firewall',
         type: 'Authorized synthetic assessment',
         company: FAKE.company,
         generatedAt: new Date().toISOString(),

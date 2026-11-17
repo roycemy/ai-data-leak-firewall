@@ -1,10 +1,10 @@
-# Proposal — Dato
+# Proposal — AI Firewall
 
 ## What I am building
 I am building an extension for companies that have big enterprise AI plans and want to make sure their employees aren't uploading confidential information to these systems. As AI use increases and more businesses adopt it, owners are going to want to make sure data is not being leaked. The goal is a central dashboard for owners to manage what their employees are sending and to make sure employees aren't sending confidential information. I first pictured it as just an extension, but then I realized the value for business owners of having an actual dashboard connected to the extension.
 
 ## Who it is for
-Company owners and security staff who don't want confidential data ending up in AI tools, and the employees who use ChatGPT, Claude and Gemini every day. The problem it solves is simple. Someone pastes an API key, an SSN or a chunk of a contract into a chat without thinking, and it's gone. Dato checks the text before it gets sent.
+Company owners and security staff who don't want confidential data ending up in AI tools, and the employees who use ChatGPT, Claude and Gemini every day. The problem it solves is simple. Someone pastes an API key, an SSN or a chunk of a contract into a chat without thinking, and it's gone. AI Firewall checks the text before it gets sent.
 
 ## What it remembers
 - **Policies.** Each type of sensitive data (secrets, personal info, financial, source code, contracts) is set to Allow, Warn, Redact or Block. The extension has a sixth type, "Sensitive context", that the website doesn't.
