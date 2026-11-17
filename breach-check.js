@@ -28,14 +28,14 @@
    * The same password written twice is only listed (and checked) once. */
   function passwordsFrom(text, findings) {
     var out = [];
-    var seen = {};
     findings.forEach(function (f, i) {
       if (PASSWORD_RULES.indexOf(f.ruleId) === -1 || !f.length) return;
       var m = PASSWORD_VALUE.exec(text.slice(f.index, f.index + f.length));
       if (!m) return;
       var password = m[1].replace(/[.!?]+$/, ''); // drop a full stop at the end of a sentence
-      if (!password || seen[password]) return;
-      seen[password] = true;
+      // Skip it if the same password is already in the list. (A plain {} lookup
+      // would wrongly match built-in names like "constructor" or "toString".)
+      if (!password || out.some(function (p) { return p.password === password; })) return;
       out.push({ findingIndex: i, password: password });
     });
     return out;

@@ -40,6 +40,18 @@ test('passwordsFrom reads a quoted assignment and ignores other secrets', () => 
   assert.deepStrictEqual(found.map((f) => f.password), [FAKE_PW]);
 });
 
+test('passwordsFrom keeps passwords that match built-in names like "constructor"', () => {
+  const text = 'my ' + WORD + ' is constructor';
+  const found = B.passwordsFrom(text, D.scan(text).findings);
+  assert.deepStrictEqual(found.map((f) => f.password), ['constructor']);
+});
+
+test('passwordsFrom lists the same password only once', () => {
+  const text = 'my ' + WORD + ' is ' + FAKE_PW + ' and again ' + WORD + ': ' + FAKE_PW;
+  const found = B.passwordsFrom(text, D.scan(text).findings);
+  assert.deepStrictEqual(found.map((f) => f.password), [FAKE_PW]);
+});
+
 test('passwordsFrom finds nothing in a harmless prompt', () => {
   const text = 'My ' + WORD + ' is not working on the school portal.';
   assert.deepStrictEqual(B.passwordsFrom(text, D.scan(text).findings), []);
