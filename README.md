@@ -41,7 +41,7 @@ This is the same repo, expanded on purpose for Mini Project 3. Mini Project 2 is
 
 The Chrome extension's visible name is now AI Firewall as well, and `dato-extension.zip` was rebuilt. Internal ids (`dato_events`, `dato-*` classes, the ZIP filename) are unchanged so saved data and the download link keep working.
 
-**Where the agent's build differed from what I expected (Mini Project 3):** I expected a checkbox and a result line; the agent also added a "Breach check" column and a "Password found in breaches" filter in the audit log and a dashboard card for breached passwords (now "Password alerts"), and it only checks passwords the detector already flagged, so a password pasted on its own with no word like "password" in front of it is not checked. *(Royce: edit this line if it does not match what you expected.)*
+**Where the agent's build differed from what I expected (Mini Project 3):** I expected a checkbox and a result line; the agent also added a "Breach check" column and a "Password found in breaches" filter in the audit log and a dashboard card for breached passwords (now "Password alerts"), and it only checks passwords the detector already flagged, so a password pasted on its own with no word like "password" in front of it is not checked.
 
 ## Required question (Mini Project 3): AI output I did not accept as-is
 
