@@ -19,13 +19,18 @@ Cobalt is the brand and the primary action. It never means "safe": verdicts use 
 System sans for UI, monospace (`--mono`) for masked values, redacted text and timestamps. Body 16px, headings tight (-0.02em).
 
 ## Layout
-One column of content under a top bar. The console is two panels (input, result) that stack below 900px. Stats go 4 → 2 columns on narrow screens. Unchanged from the first version.
+One column of content under a top bar. The console is two panels (input, result) that stack below 900px. Stats go 5 → 2 columns on narrow screens (the fifth card, "Confirmed breached", was added for Mini Project 3). Unchanged from the first version.
 
 ## State styling
 - **Empty:** muted centred sentence that says what to do next.
 - **Invalid input:** red-tinted box under the field plus a red field border; short plain sentence, never a pop-up.
 - **In use:** verdict banner in the colour of the action; findings rows with a severity tag.
 - **Destructive action armed:** button turns red and its label changes to "Click again to confirm" for 4 seconds.
+- **Breach-check box:** a plain checkbox row under the console buttons, with a short muted privacy note under it ("Sends only the first 5 characters of the password's SHA-1 hash…"). At least 44px tall to tap on a phone.
+- **Breach check, loading:** a quiet `--panel-2` note with a small spinner (no spinner when reduced motion is on) and "Checking…".
+- **Breach check, confirmed breached:** red note (`--red` on its tint) with ⛔ and the count in bold; the password's finding row shows CRITICAL and a red "Confirmed breached" tag.
+- **Breach check, not found:** green note with ✓ "Not found in known breaches", plus a reminder that this is not proof the password is strong.
+- **Breach check, error or nothing to check:** amber note (error) or muted note (nothing to check). Always says the local scan still applies.
 - **After reset:** identical to the empty state.
 - **Edited after inspecting:** the result panel shows the muted empty-state sentence asking for a new inspection, and the Send button is disabled (dimmed) and reads "Inspect first to send".
 
