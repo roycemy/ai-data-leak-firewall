@@ -48,7 +48,7 @@ These are the only sizes in `styles.css` (12, 13, 14, 16, 24, 28 and 32px, where
 4 (half step, inside badges only), 8, 16, 24, 32, 48. Cards have 24px padding (16px on phones), and grids have 16px gaps (24px between page sections).
 
 ## Components
-- **Brand mark:** a cobalt (`--accent`, #2F5BFF) rounded square with a white **A**, matching the favicon. The site header uses a shield on that same cobalt square. The extension popup, intervention dialog, flagged-activity dashboard and toolbar icons use the A mark.
+- **Brand mark:** a cobalt (`--accent`, #2F5BFF) rounded square with a white shield-and-check, as in the site header. The extension popup, intervention dialog, flagged-activity dashboard and toolbar icons use that same mark.
 - **Card (the only container):** white, 1px `--border`, 12px radius, shadow `0 1px 2px rgba(22, 21, 15, 0.05)`. Header: card title on the left, an optional small action or caption on the right.
 - **Badge (the only tag):** 999px radius, 12px/600 text, 2px 8px padding, tint background and coloured text, icon first. Used for severity, outcome and policy action. Small radii (code, inputs) use `--radius-sm`.
 - **Buttons:** primary (cobalt fill), secondary (white with `--border-strong`) and quiet (text only). One primary per screen. 40px tall (44px on phones). Destructive buttons are secondary until armed.

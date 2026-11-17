@@ -21,7 +21,7 @@ Two tiers, both local-only:
 
 SSNs and payment card numbers use the Secrets & credentials policy, which defaults to **Block**, so they are stopped at least as strictly as API keys. Emails and other personal details still default to Warn.
 
-When a prompt is stopped, the dialog offers **Go back**, **Remove and send** (the primary action: it replaces flagged values in the composer with placeholders such as `[REDACTED CARD]` and then sends), and **Send anyway** (a confirm-twice danger action). The popup, intervention, flagged-activity dashboard and toolbar icons use the same cobalt **A** mark as the site favicon.
+When a prompt is stopped, the dialog offers **Go back**, **Remove and send** (the primary action: it replaces flagged values in the composer with placeholders such as `[REDACTED CARD]` and then sends), and **Send anyway** (a confirm-twice danger action). The popup, intervention, flagged-activity dashboard and toolbar icons use the same cobalt shield mark as the website header.
 
 You can also install from the website download, `ai-firewall-extension.zip`. Unzip it and, in **Load unpacked**, choose the folder that contains `manifest.json` at its top level.
 
