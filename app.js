@@ -547,18 +547,53 @@
   // The numbers and charts come from dashboard.js (pure functions over `events`).
   var DB = window.DatoDashboard;
 
+  // Counts from the Chrome extension, posted by its bridge content script
+  // (extension/bridge.js). Counts and labels only, kept in memory, never saved.
+  var EXT = window.DatoExtensionLink;
+  var extSummary = null;
+  var SHIELD_ICON = '<svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>';
+  // Changes: extSummary, then redraws the Dashboard.
+  window.addEventListener('message', function (e) {
+    if (!EXT.isFromExtension(e, window)) return;
+    var s = EXT.validate(e.data);
+    if (!s) return;
+    extSummary = s;
+    renderDashboard();
+  });
+  // Ask once in case the extension loaded before this listener did.
+  window.postMessage({ type: EXT.REQUEST_TYPE }, location.origin);
+
+  // Reads: extSummary. Changes: the extension card only.
+  function renderExtensionCard() {
+    var badge = document.getElementById('ext-status');
+    // Connected uses the cobalt brand badge with the shield mark (cobalt never means "safe").
+    badge.className = 'badge ' + (extSummary ? 'badge-info' : 'badge-low');
+    badge.innerHTML = (extSummary ? SHIELD_ICON : '<span class="dot"></span>') + (extSummary ? 'Connected' : 'Not connected');
+    var ago = extSummary && extSummary.lastAt ? DB.timeAgo(extSummary.lastAt, Date.now()) : '';
+    document.getElementById('ext-body').innerHTML = EXT.cardHTML(extSummary, ago);
+  }
+  document.getElementById('ext-body').addEventListener('click', function (e) {
+    var link = e.target.closest && e.target.closest('[data-goto]');
+    if (link) { e.preventDefault(); showView(link.getAttribute('data-goto')); }
+  });
+
   // Reads: events, policies. Changes: the Dashboard view only.
   function renderDashboard() {
     var cats = Object.keys(D.CATEGORIES);
     var s = DB.summarize(events, cats);
     var empty = s.inspections === 0;
+    var extFlagged = extSummary ? extSummary.total : 0;
+    var extBlocked = extSummary ? extSummary.byAction.block : 0;
+    renderExtensionCard();
 
-    // Stat cards: a number and one line of context each.
-    setStat('stat-scans', s.inspections, empty ? 'Nothing inspected yet' : plural(s.findings, 'finding') + ' caught');
-    setStat('stat-flagged', s.flagged, empty ? 'With confidential data' : Math.round(s.flagged / s.inspections * 100) + '% of inspections');
-    setStat('stat-blocked', s.blocked, 'Stopped before sending');
+    // Stat cards: a number and one line of context each. Flagged and Blocked add the
+    // extension's counts and say so; Inspections is this website only (the extension
+    // records flagged prompts, not every prompt).
+    setStat('stat-scans', s.inspections, empty ? 'Nothing inspected on this website yet' : plural(s.findings, 'finding') + ' caught');
+    setStat('stat-flagged', s.flagged + extFlagged, EXT.statCaption(empty ? 'With confidential data' : Math.round(s.flagged / s.inspections * 100) + '% of inspections', extFlagged));
+    setStat('stat-blocked', s.blocked + extBlocked, EXT.statCaption('Stopped before sending', extBlocked));
     setStat('stat-breached', s.breachedInspections, 'Inspections with a breached password');
-    document.getElementById('view-dashboard').classList.toggle('is-empty', empty);
+    document.getElementById('view-dashboard').classList.toggle('is-empty', empty && !extFlagged);
     document.getElementById('dash-empty').hidden = !empty;
     document.getElementById('dash-content').hidden = empty;
     var line = document.getElementById('status-line');

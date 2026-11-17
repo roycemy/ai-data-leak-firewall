@@ -36,5 +36,10 @@
     "css": ["content.css"],
     "run_at": "document_idle",
     "all_frames": false
+  }, {
+    "matches": ["https://roycemy.github.io/ai-data-leak-firewall/*"],
+    "js": ["bridge.js"],
+    "run_at": "document_idle",
+    "all_frames": false
   }]
 }

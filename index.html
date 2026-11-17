@@ -153,11 +153,16 @@
       <div class="card stat-card"><p class="caption">Password alerts</p><p class="stat-num num" id="stat-breached">0</p><p class="stat-sub" id="stat-breached-sub"></p></div>
     </div>
 
+    <section id="ext-card" class="card ext-card" aria-labelledby="ext-title" aria-live="polite">
+      <div class="card-head"><h2 class="card-title ext-title" id="ext-title"><span class="brand-mark ext-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>From the Chrome extension</h2><span class="badge badge-low" id="ext-status"><span class="dot"></span>Not connected</span></div>
+      <div id="ext-body"></div>
+    </section>
+
     <div id="dash-empty" class="card dash-empty" hidden>
       <div class="empty">
         <span class="empty-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16v-5M12 16V7M17 16v-8"/></svg></span>
-        <p class="empty-title">No activity yet</p>
-        <p class="empty-text">Inspect a prompt on the Firewall tab. Trends, data types and recent activity from this browser appear here.</p>
+        <p class="empty-title">Nothing checked on this website yet</p>
+        <p class="empty-text">Inspect a prompt on the Firewall tab. Trends, data types and recent activity from the Firewall tab appear here. Extension counts are in the card above.</p>
         <a href="#firewall" id="dash-goto-firewall" class="btn btn-primary">Go to Firewall</a>
       </div>
     </div>
@@ -226,7 +231,7 @@
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 Customer email: dana@example.com
 Test card: 4111 1111 1111 1111</pre>
-        <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies in Chrome. It does not send anything to this dashboard.</p>
+        <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies and flag log in Chrome. On this site it shares counts only (never prompt text) with the Dashboard.</p>
       </section>
     </div>
   </section>
@@ -253,6 +258,7 @@ Test card: 4111 1111 1111 1111</pre>
 <script src="detectors.js"></script>
 <script src="breach-check.js"></script>
 <script src="dashboard.js"></script>
+<script src="extension-link.js"></script>
 <script src="app.js"></script>
 <script src="assessment.js"></script>
 </body>
