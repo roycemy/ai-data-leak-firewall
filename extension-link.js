@@ -84,9 +84,12 @@
     if (!isCount(s.total) || !isCount(s.high) || s.high > s.total) return null;
     /* Older 1.2.0 / 1.3.0 extensions omit these; treat a missing count as 0 so
      * they still show Connected. Reject the message when a value is present but
-     * is not a whole number. */
-    var stoppedToday = s.stoppedToday === undefined ? 0 : s.stoppedToday;
-    var stoppedWeek = s.stoppedWeek === undefined ? 0 : s.stoppedWeek;
+     * is not a whole number. Remember whether today was omitted so the hero
+     * can say "Working." instead of "Nothing risky yet today". */
+    var todayKnown = s.stoppedToday !== undefined;
+    var weekKnown = s.stoppedWeek !== undefined;
+    var stoppedToday = todayKnown ? s.stoppedToday : 0;
+    var stoppedWeek = weekKnown ? s.stoppedWeek : 0;
     if (!isCount(stoppedToday) || !isCount(stoppedWeek) || stoppedToday > stoppedWeek || stoppedWeek > s.total) return null;
     if (s.lastAt !== null && !(typeof s.lastAt === 'number' && isFinite(s.lastAt) && s.lastAt > 0)) return null;
     var out = { total: s.total, high: s.high, lastAt: s.lastAt, stoppedToday: stoppedToday, stoppedWeek: stoppedWeek };
@@ -99,7 +102,7 @@
         out[group][k] = n;
       }
     }
-    return { summary: out, recent: cleanRecent(data.recent) };
+    return { summary: out, recent: cleanRecent(data.recent), stoppedTodayKnown: todayKnown, stoppedWeekKnown: weekKnown };
   }
 
   /* isFromExtension(event, win) -> true only for a message this window posted to itself

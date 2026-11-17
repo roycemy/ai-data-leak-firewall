@@ -97,6 +97,10 @@ test('validate treats a missing stoppedToday or stoppedWeek as 0, and still reje
   assert.ok(gotNeither, '1.2.0 / older 1.3.0 messages without either field still connect');
   assert.strictEqual(gotNeither.summary.stoppedToday, 0);
   assert.strictEqual(gotNeither.summary.stoppedWeek, 0);
+  assert.strictEqual(gotNeither.stoppedTodayKnown, false);
+  assert.strictEqual(gotNeither.stoppedWeekKnown, false);
+  assert.strictEqual(gotToday.stoppedTodayKnown, false);
+  assert.strictEqual(Link.validate(good).stoppedTodayKnown, true);
 
   const bad = [
     Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: 1.5 }) }),

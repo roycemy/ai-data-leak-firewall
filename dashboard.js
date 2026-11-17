@@ -249,8 +249,10 @@
     return current !== next && !isCanonicalHash(current);
   }
 
-  /* hero({ connected, stopsToday, stopsWeek }) -> { kind, text } for the
-   * large Dashboard sentence. "Working…" is only used when the extension is connected. */
+  /* hero({ connected, stopsToday, stopsWeek, stopsTodayKnown }) -> { kind, text }
+   * for the large Dashboard sentence. "Working…" is only used when the extension
+   * is connected. If an older extension omitted stoppedToday, we cannot honestly
+   * say "Nothing risky yet today", so the sentence is just "Working." */
   function hero(opts) {
     opts = opts || {};
     if (!opts.connected) {
@@ -262,7 +264,35 @@
     if (opts.stopsWeek > 0) {
       return { kind: 'ok', text: 'Working. ' + plural(opts.stopsWeek, 'risky prompt') + ' stopped this week' };
     }
+    if (opts.stopsTodayKnown === false) {
+      return { kind: 'ok', text: 'Working.' };
+    }
     return { kind: 'ok', text: 'Working. Nothing risky yet today' };
+  }
+
+  var NAME_MAX = 60;
+  var NAME_FALLBACK = 'You';
+
+  /* sanitizeName(value) -> trimmed string of at most 60 characters.
+   * Does not interpret HTML; the caller must render with textContent. */
+  function sanitizeName(value) {
+    if (value == null) return '';
+    var s = String(value).trim();
+    if (s.length > NAME_MAX) s = s.slice(0, NAME_MAX);
+    return s;
+  }
+  function displayName(value) {
+    return sanitizeName(value) || NAME_FALLBACK;
+  }
+  /* clockTime(ts) -> "2:14 PM" in the user's locale. Used on catch rows and the log
+   * instead of a relative "2 min ago". */
+  function clockTime(ts) {
+    return new Date(ts).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+  /* catchMeta(name, site, time) -> "Royce Myers · ChatGPT · 2:14 PM".
+   * An empty name is shown as "You". */
+  function catchMeta(name, site, time) {
+    return displayName(name) + ' · ' + site + ' · ' + clockTime(time);
   }
 
   /* passwordAlert(events) -> a red status line when any inspection found a
@@ -358,7 +388,12 @@
     tabFor: tabFor,
     canonicalHash: canonicalHash,
     isCanonicalHash: isCanonicalHash,
-    shouldReplaceHash: shouldReplaceHash
+    shouldReplaceHash: shouldReplaceHash,
+    NAME_MAX: NAME_MAX,
+    sanitizeName: sanitizeName,
+    displayName: displayName,
+    clockTime: clockTime,
+    catchMeta: catchMeta
   };
 })(typeof window !== 'undefined' ? window : globalThis);
 if (typeof module !== 'undefined' && module.exports) { module.exports = globalThis.DatoDashboard; }

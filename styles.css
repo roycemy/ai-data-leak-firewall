@@ -460,6 +460,18 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .catches-empty { margin: 0; font-size: 16px; line-height: 24px; color: var(--text-2); }
 .audit-card { margin-top: 16px; }
 .setup-policies { margin-top: 24px; }
+.name-card { margin-bottom: 24px; }
+.name-card .card-title { display: block; }
+.field-hint { color: var(--text-2); font-size: 14px; line-height: 20px; margin: 8px 0; }
+#user-name {
+  display: block; width: 100%; max-width: 400px;
+  font: inherit; font-size: 16px; line-height: 24px;
+  min-height: 44px; padding: 8px 12px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm); outline: none;
+}
+#user-name:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+
 #view-assessment { margin-top: 32px; }
 #see-all {
   display: inline-flex; align-items: center; min-height: 44px; padding: 0 8px;
