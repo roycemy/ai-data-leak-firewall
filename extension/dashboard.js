@@ -1,4 +1,4 @@
-/* Dato flagged-activity dashboard. Reads chrome.storage.local (dato_events,
+/* AI Firewall flagged-activity dashboard. Reads chrome.storage.local (dato_events,
  * dato_settings). Deleting and pruning go through the service worker.
  *
  * State:
@@ -31,7 +31,7 @@
   function renderKpis(m) {
     var box = $('kpis'); box.textContent = '';
     [
-      ['Flagged prompts', m.flagged, 'Prompts Dato found something in'],
+      ['Flagged prompts', m.flagged, 'Prompts AI Firewall found something in'],
       ['High severity', m.high, 'Worst finding was critical or high'],
       ['Stopped, not sent', m.stopped, 'You went back, nothing was sent'],
       ['Sent through', m.sentThrough, 'Send anyway, or policy allowed it'],
@@ -109,7 +109,7 @@
     var box = $('log'); box.textContent = '';
     var from = S.startOfDay(Date.now()) - (range - 1) * S.DAY;
     var rows = list.filter(function (e) { return e.t >= from; }).slice(-50).reverse();
-    if (!rows.length) { box.appendChild(el('p', 'empty', demo ? 'No demo flags.' : 'Nothing flagged yet. When Dato holds a prompt on ChatGPT, Claude or Gemini, it shows up here.')); return; }
+    if (!rows.length) { box.appendChild(el('p', 'empty', demo ? 'No demo flags.' : 'Nothing flagged yet. When AI Firewall holds a prompt on ChatGPT, Claude or Gemini, it shows up here.')); return; }
     var wrap = el('div', 'table-wrap');
     var t = el('table');
     t.innerHTML = '<thead><tr><th>When</th><th>Site</th><th>Severity</th><th>Policy</th><th>What happened</th><th>Data types</th></tr></thead>';
@@ -194,7 +194,7 @@
   $('export').addEventListener('click', function () {
     var payload = {
       exportedAt: new Date().toISOString(),
-      source: 'Dato extension, this browser profile',
+      source: 'AI Firewall extension, this browser profile',
       note: 'Counts and labels only. No prompt text, file contents or matched values.',
       events: live.events
     };

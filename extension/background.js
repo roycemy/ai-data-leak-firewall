@@ -1,4 +1,4 @@
-/* Dato service worker: the only writer of the activity log.
+/* AI Firewall service worker: the only writer of the activity log.
  * Writes go through one queue so two tabs cannot overwrite each other's events.
  *
  * Storage (chrome.storage.local):
@@ -9,7 +9,7 @@
 importScripts('store.js');
 
 var queue = Promise.resolve();
-function enqueue(task) { queue = queue.then(task).catch(function (e) { console.error('Dato store', e); }); return queue; }
+function enqueue(task) { queue = queue.then(task).catch(function (e) { console.error('AI Firewall store', e); }); return queue; }
 
 function retentionDays(all) { return DatoStore.cleanRetention(all.dato_settings && all.dato_settings.retentionDays); }
 

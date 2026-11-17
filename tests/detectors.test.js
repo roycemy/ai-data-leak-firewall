@@ -14,7 +14,7 @@ const FAKE_SSN = ['123', '45', '6789'].join('-');
 
 const ruleIds = (text) => D.scan(text).findings.map((f) => f.ruleId);
 
-// ---- Things Dato must catch ----
+// ---- Things AI Firewall must catch ----
 test('catches an AWS access key', () => {
   assert.ok(ruleIds('AWS_ACCESS_KEY_ID=' + FAKE_AWS_KEY).includes('aws-access-key'));
 });
@@ -43,7 +43,7 @@ test('catches real contract language', () => {
   assert.ok(ruleIds(text).includes('contract-language'));
 });
 
-// ---- Things Dato must leave alone (false positives found while testing) ----
+// ---- Things AI Firewall must leave alone (false positives found while testing) ----
 test('"Monday agenda" is not contract language', () => {
   // The old check looked for "nda" anywhere in the text, so it matched Mon-DA-y and a-GENDA.
   // It flags a sentence once two legal-sounding terms appear ("nda" plus "liability").

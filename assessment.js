@@ -1,6 +1,6 @@
-/* Dato — Authorized Synthetic Assessment
+/* AI Firewall — Authorized Synthetic Assessment
  * A guided, defensive demo: it generates obviously fake sensitive data for a
- * fictional company and measures what Dato catches before it would reach an
+ * fictional company and measures what AI Firewall catches before it would reach an
  * AI tool. No real company, person, credential, or network is involved.
  */
 (function () {

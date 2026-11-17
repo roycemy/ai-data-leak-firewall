@@ -2,7 +2,7 @@
 
 **Stop confidential data from entering AI tools — without stopping people from using AI.**
 
-AI Firewall (first called Dato; the repo and the Chrome extension still use that name) is a local-first AI data-leak firewall. It inspects prompts and files **before** they reach ChatGPT, Claude, or any other LLM, detects confidential content, and applies your policy: **warn**, **redact**, or **block**. Every inspection runs in the browser. The only thing that ever leaves it is the optional breach check below, which sends a 5-character hash prefix and nothing else.
+AI Firewall (first called Dato; the repo name is unchanged) is a local-first AI data-leak firewall. It inspects prompts and files **before** they reach ChatGPT, Claude, or any other LLM, detects confidential content, and applies your policy: **warn**, **redact**, or **block**. Every inspection runs in the browser. The only thing that ever leaves it is the optional breach check below, which sends a 5-character hash prefix and nothing else.
 
 **Live:** https://roycemy.github.io/ai-data-leak-firewall/
 
@@ -39,7 +39,7 @@ This is the same repo, expanded on purpose for Mini Project 3. Mini Project 2 is
 | UI review 2: one red signal per problem in the result, owner wording on screen ("Your password stays on this device", "Your policy blocks passwords and keys", "Password in the message"), passwords masked to their last two characters, Dashboard as home with a status line, "Password alerts", a send no longer logs a second inspection, the Extension page in the shared style, and type sizes kept to the scale | `DESIGN.md`, `detectors.js`, `app.js`, `dashboard.js`, `index.html`, `styles.css`, tests |
 | UI polish after review: a tighter design system first (DESIGN.md), then a calmer Firewall (one primary button, a switch with a short privacy line, one verdict banner, the breach result inside the password's row), a Dashboard built as the owner's home (stats, 14-day SVG trend, data types, severity and outcomes, recent activity, policies, empty state, "this device only" note) an audit log that becomes stacked cards on a phone, and phone tabs in two even rows | `DESIGN.md`, `styles.css`, `index.html`, `app.js`, `dashboard.js`, `tests/dashboard.test.js` |
 
-The Chrome extension did not change, so `dato-extension.zip` was not rebuilt.
+The Chrome extension's visible name is now AI Firewall as well, and `dato-extension.zip` was rebuilt. Internal ids (`dato_events`, `dato-*` classes, the ZIP filename) are unchanged so saved data and the download link keep working.
 
 **Where the agent's build differed from what I expected (Mini Project 3):** I expected a checkbox and a result line; the agent also added a "Breach check" column and a "Password found in breaches" filter in the audit log and a dashboard card for breached passwords (now "Password alerts"), and it only checks passwords the detector already flagged, so a password pasted on its own with no word like "password" in front of it is not checked. *(Royce: edit this line if it does not match what you expected.)*
 
@@ -53,7 +53,7 @@ The sections below, down to "About PROPOSAL.md", are the Mini Project 2 write-up
 
 ## Where this repo came from
 
-This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site has an Extension tab to download it.
+This repo was created for Mini Project 2 by copying over a concept I had been working on for the past few weeks (originally called Dato). The history here starts at the copy, so it does not show that earlier work. For this assignment I added the planning documents (PROPOSAL.md, PRD.md, DESIGN.md, AGENTS.md), inline error handling, Reset everything, the keyboard shortcut, empty states and phone fixes. The Chrome extension is in [`extension/`](extension/README.md), and the site has an Extension tab to download it.
 
 ## How to use
 

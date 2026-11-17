@@ -1,6 +1,5 @@
 # Proposal — AI Firewall
-
-(The project started under the name Dato. It is now called AI Firewall. The repo name and the Chrome extension still say Dato.)
+(The project started under the name Dato. It is now called AI Firewall. The repo name is unchanged.)
 
 ## What I am building
 I am building an extension for companies that have big enterprise AI plans and want to make sure their employees aren't uploading confidential information to these systems. As AI use increases and more businesses adopt it, owners are going to want to make sure data is not being leaked. The goal is a central dashboard for owners to manage what their employees are sending and to make sure employees aren't sending confidential information. I first pictured it as just an extension, but then I realized the value for business owners of having an actual dashboard connected to the extension.
