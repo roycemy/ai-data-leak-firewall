@@ -75,9 +75,65 @@ test('redact removes every flagged value and keeps the rest of the text', () => 
   assert.ok(redacted.includes('tonight.'));
 });
 
-// ---- Known gap, written down on purpose ----
-test('known gap: an SSN without dashes is not detected yet', { todo: 'only the dashed SSN form is matched' }, () => {
-  assert.ok(ruleIds('ssn 123456789').length > 0);
+// ---- SSNs without dashes, implied secrets, false flags, URL emails ----
+test('catches a bare SSN next to the word ssn, and a spaced SSN next to social', () => {
+  assert.ok(ruleIds('ssn 123456789').includes('ssn'));
+  assert.ok(ruleIds('her social is 123 45 6789').includes('ssn'));
+  assert.ok(ruleIds("jane's number nine digits: 123456789 for taxes").includes('ssn'));
+});
+
+test('a bare 9-digit number without tax or SSN context is left alone', () => {
+  assert.ok(!ruleIds('the order id is 123456789 for pickup').includes('ssn'));
+});
+
+test('catches a high-entropy secret after "magic word is"', () => {
+  const text = 'the magic word for the admin panel is Tr0ub4dor&3';
+  assert.ok(ruleIds(text).includes('implied-secret'), ruleIds(text).join(','));
+});
+
+test('harmless sentences stay clean', () => {
+  assert.deepStrictEqual(ruleIds('hello, lunch at noon?'), []);
+  assert.deepStrictEqual(ruleIds('my password is not working'), []);
+});
+
+test('an SSN and a card are not also a named password', () => {
+  const ids = ruleIds('Customer SSN is ' + FAKE_SSN + ', card ' + FAKE_CARD);
+  assert.ok(ids.includes('ssn'));
+  assert.ok(ids.includes('credit-card'));
+  assert.ok(!ids.includes('credential-named'), ids.join(','));
+  assert.ok(!ids.includes('implied-secret'), ids.join(','));
+});
+
+test('credential URLs are not also flagged as an email', () => {
+  const pg = ruleIds('connect with postgres://admin:pass@db.example.com/app');
+  assert.ok(pg.includes('db-connection-string'));
+  assert.ok(!pg.includes('email-address'), pg.join(','));
+  const https = ruleIds('open https://user:pass@host.example.com/secret');
+  assert.ok(https.includes('basic-auth-url'));
+  assert.ok(!https.includes('email-address'), https.join(','));
+});
+
+test('a normal email is still flagged', () => {
+  assert.ok(ruleIds('write to dana@example.com tonight').includes('email-address'));
+});
+
+test('SSNs and payment cards use the secrets policy (default Block)', () => {
+  const ssn = D.scan('SSN ' + FAKE_SSN).findings.find((f) => f.ruleId === 'ssn');
+  const card = D.scan('card ' + FAKE_CARD).findings.find((f) => f.ruleId === 'credit-card');
+  assert.ok(ssn && card);
+  assert.strictEqual(ssn.category, 'pii');
+  assert.strictEqual(card.category, 'pii');
+  assert.strictEqual(D.policyCategory(ssn), 'secrets');
+  assert.strictEqual(D.policyCategory(card), 'secrets');
+});
+
+test('redact uses short placeholders such as [REDACTED CARD]', () => {
+  const text = 'charge ' + FAKE_CARD + ' and SSN ' + FAKE_SSN;
+  const redacted = D.redact(text, D.scan(text).findings);
+  assert.ok(redacted.includes('[REDACTED CARD]'));
+  assert.ok(redacted.includes('[REDACTED SSN]'));
+  assert.ok(!redacted.includes('4111'));
+  assert.ok(!redacted.includes('123-45-6789') && !redacted.includes(FAKE_SSN));
 });
 
 test('a password is masked to its last two characters, without the keyword or full stop', () => {

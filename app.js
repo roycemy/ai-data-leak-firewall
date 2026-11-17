@@ -169,12 +169,18 @@
   // ---------- Scanning ----------
   function severityRank(s) { return { critical: 4, high: 3, medium: 2, low: 1 }[s] || 0; }
 
+  function policyFor(f) {
+    // SSNs and payment cards use the Passwords & keys policy (default Block).
+    var key = (D.policyCategory && D.policyCategory(f)) || f.category;
+    return policies[key] || 'warn';
+  }
+
   function evaluate(findings) {
     // Decide the governing action: block > redact > warn > allow
     var rank = { allow: 0, warn: 1, redact: 2, block: 3 };
     var action = 'allow';
     findings.forEach(function (f) {
-      var p = policies[f.category] || 'warn';
+      var p = policyFor(f);
       if (rank[p] > rank[action]) action = p;
     });
     return action;
@@ -241,7 +247,9 @@
     // 1. One verdict banner. For block, redact and warn it says, in plain words,
     //    which kinds of data decided it, e.g. "Your policy blocks passwords and keys."
     var deciding = Object.keys(D.CATEGORIES).filter(function (c) {
-      return policies[c] === action && findings.some(function (f) { return f.category === c; });
+      return policies[c] === action && findings.some(function (f) {
+        return ((D.policyCategory && D.policyCategory(f)) || f.category) === c;
+      });
     }).map(function (c) { return D.CATEGORIES[c].label.toLowerCase().replace(' & ', ' and '); });
     var VERB = { block: 'blocks', redact: 'redacts', warn: 'flags' };
     var because = VERB[key] && deciding.length
@@ -457,8 +465,8 @@
   }
   function policyDescription(cat) {
     return {
-      secrets: 'API keys, tokens, private keys, passwords, connection strings',
-      pii: 'SSNs, card numbers, emails, phones, addresses, IDs',
+      secrets: 'API keys, tokens, passwords, SSNs and payment cards',
+      pii: 'Emails, phones, addresses, IDs',
       financial: 'Bank details, revenue, payroll, invoices, IBANs',
       source: 'Proprietary code pasted into prompts',
       contract: 'Legal agreements, NDAs, contract clauses'

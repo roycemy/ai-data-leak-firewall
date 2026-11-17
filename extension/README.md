@@ -12,14 +12,18 @@ AI Firewall checks prompts locally before they are submitted on **ChatGPT (`chat
 
 Chrome will show that AI Firewall can read and change data on the three supported AI sites. It needs that access to inspect the prompt editor and stop a submission. It has no access to other websites.
 
-## What it catches (1.1.0)
+## What it catches (1.2.0)
 
 Two tiers, both local-only:
 
 - **Exact matches hard-block by default.** Full-length API keys, private key blocks, connection strings, valid card numbers, SSNs, and similar high-confidence patterns stop the prompt immediately.
 - **Anything plausibly confidential warns.** Shortened or partial keys, credentials named in plain language ("my password is ..."), unrecognized high-entropy tokens, personal details like salaries, and confidentiality labels (a line starting "Confidential:", the capitals CONFIDENTIAL, "internal use only", "do not distribute", "under NDA") show a review warning instead of silently passing. The everyday words "confidential", "restricted" and "proprietary" inside a normal sentence do not.
 
-Every interception can be overridden intentionally: warnings offer **Send anyway**, and hard blocks offer it too, with a second confirming click so it cannot fire accidentally.
+SSNs and payment card numbers use the Secrets & credentials policy, which defaults to **Block**, so they are stopped at least as strictly as API keys. Emails and other personal details still default to Warn.
+
+When a prompt is stopped, the dialog offers **Go back**, **Remove and send** (the primary action: it replaces flagged values in the composer with placeholders such as `[REDACTED CARD]` and then sends), and **Send anyway** (a confirm-twice danger action). The popup, intervention, flagged-activity dashboard and toolbar icons use the same cobalt shield mark as the website header.
+
+You can also install from the website download, `ai-firewall-extension.zip`. Unzip it and, in **Load unpacked**, choose the folder that contains `manifest.json` at its top level.
 
 ## Safe five-minute test
 
@@ -32,10 +36,10 @@ Customer email: dana@example.com
 Test card: 4111 1111 1111 1111
 ```
 
-- Default policy blocks the AWS example key before submission.
+- Default policy blocks the AWS example key, the test card and an SSN before submission.
 - A shortened version of the key (or a phrase like `my password is hunter2`) triggers the review warning instead of a hard block.
-- On a hard block, **Send anyway** requires a second confirming click before the prompt goes through.
-- Open the AI Firewall toolbar popup and set **Secrets & credentials** to **Warn**. Try again to see the review-and-send flow.
+- On a stop, **Remove and send** replaces the flagged values in the editor and submits the redacted copy. **Send anyway** requires a second confirming click before the original prompt goes through.
+- Open the AI Firewall toolbar popup and set **Secrets & credentials** to **Warn**. Try again to see the review-and-send flow. That setting also covers SSNs and payment cards.
 - Set it to **Redact**. AI Firewall replaces detected values in the editor and submits only the redacted copy.
 
 The key and card above are public synthetic examples, not live credentials.

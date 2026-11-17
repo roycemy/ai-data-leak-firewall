@@ -1,14 +1,15 @@
-"""Rebuild dato-extension.zip from extension/. Run from the repo root: python tools/build-zip.py
+"""Rebuild ai-firewall-extension.zip from extension/. Run from the repo root: python tools/build-zip.py
 
-Entries are stored as extension/<file> with forward slashes, so the ZIP
-extracts to a folder called "extension" on Windows, Mac and Linux.
+Entries are stored at the zip root (manifest.json, not extension/manifest.json)
+with forward slashes, so "Load unpacked" works on the extracted folder in
+Chrome and Edge.
 """
 import os
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'extension')
-OUT = os.path.join(ROOT, 'dato-extension.zip')
+OUT = os.path.join(ROOT, 'ai-firewall-extension.zip')
 
 with zipfile.ZipFile(OUT, 'w', zipfile.ZIP_DEFLATED) as z:
     for base, _dirs, files in os.walk(SRC):
@@ -16,6 +17,6 @@ with zipfile.ZipFile(OUT, 'w', zipfile.ZIP_DEFLATED) as z:
             if name.endswith('.md'):
                 continue
             full = os.path.join(base, name)
-            rel = os.path.relpath(full, ROOT).replace(os.sep, '/')
+            rel = os.path.relpath(full, SRC).replace(os.sep, '/')
             z.write(full, rel)
 print('wrote', OUT)

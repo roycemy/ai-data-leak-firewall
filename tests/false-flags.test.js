@@ -55,3 +55,46 @@ test('extension: financial figures are tentative, so a policy can never block th
   const finding = ENGINES.extension.scan('Our revenue was $4.2M last year.').findings.find((f) => f.ruleId === 'financial-figures');
   assert.ok(finding && finding.tentative);
 });
+
+// Live-test evasions and false flags, on both engines.
+const FAKE_CARD = ['4111', '1111', '1111', '1111'].join(' ');
+const FAKE_SSN = ['123', '45', '6789'].join('-');
+
+for (const [engineName, D] of Object.entries(ENGINES)) {
+  const ids = (text) => D.scan(text).findings.map((f) => f.ruleId);
+
+  test(`${engineName}: flags a magic-word high-entropy secret`, () => {
+    assert.ok(ids('the magic word for the admin panel is Tr0ub4dor&3').includes('implied-secret'));
+  });
+  test(`${engineName}: flags a spaced SSN next to "social"`, () => {
+    assert.ok(ids('her social is 123 45 6789').includes('ssn'));
+  });
+  test(`${engineName}: flags a bare 9-digit number in a tax context`, () => {
+    assert.ok(ids("jane's number nine digits: 123456789 for taxes").includes('ssn'));
+  });
+  test(`${engineName}: "hello, lunch at noon?" and "my password is not working" stay clean`, () => {
+    assert.deepStrictEqual(ids('hello, lunch at noon?'), []);
+    assert.deepStrictEqual(ids('my password is not working'), []);
+  });
+  test(`${engineName}: SSN + card is not also a named credential`, () => {
+    const found = ids('Customer SSN is ' + FAKE_SSN + ', card ' + FAKE_CARD);
+    assert.ok(found.includes('ssn'));
+    assert.ok(found.includes('credit-card'));
+    assert.ok(!found.includes('credential-named'), found.join(','));
+    assert.ok(!found.includes('implied-secret'), found.join(','));
+  });
+  test(`${engineName}: suppresses email inside a credential URL`, () => {
+    const pg = ids('postgres://admin:pass@db.example.com/app');
+    assert.ok(pg.includes('db-connection-string'));
+    assert.ok(!pg.includes('email-address'), pg.join(','));
+    const https = ids('https://user:pass@host.example.com/login');
+    assert.ok(https.includes('basic-auth-url'));
+    assert.ok(!https.includes('email-address'), https.join(','));
+  });
+  test(`${engineName}: SSN and card use the secrets policy`, () => {
+    const ssn = D.scan('SSN ' + FAKE_SSN).findings.find((f) => f.ruleId === 'ssn');
+    const card = D.scan('card ' + FAKE_CARD).findings.find((f) => f.ruleId === 'credit-card');
+    assert.strictEqual(D.policyCategory(ssn), 'secrets');
+    assert.strictEqual(D.policyCategory(card), 'secrets');
+  });
+}
