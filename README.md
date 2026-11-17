@@ -36,7 +36,7 @@ This is the same repo, expanded on purpose for Mini Project 3. Mini Project 2 is
 | "Found in breaches" count in the audit log (column and filter) and on the Dashboard | `app.js`, `index.html` |
 | The site shows the name AI Firewall instead of Dato | `index.html`, `app.js`, `assessment.js` |
 | Tests for hashing, response parsing, non-OK and offline handling | `tests/breach-check.test.js` |
-| UI polish after review: a tighter design system first (DESIGN.md), then a calmer Firewall (one primary button, a switch with a short privacy line, one verdict banner, the breach result inside the password's row), a Dashboard built as the owner's home (stats, 14-day SVG trend, data types, severity and outcomes, recent activity, policies, empty state, "this device only" note) and an audit log that becomes stacked cards on a phone | `DESIGN.md`, `styles.css`, `index.html`, `app.js`, `dashboard.js`, `tests/dashboard.test.js` |
+| UI polish after review: a tighter design system first (DESIGN.md), then a calmer Firewall (one primary button, a switch with a short privacy line, one verdict banner, the breach result inside the password's row), a Dashboard built as the owner's home (stats, 14-day SVG trend, data types, severity and outcomes, recent activity, policies, empty state, "this device only" note) an audit log that becomes stacked cards on a phone, and phone tabs in two even rows | `DESIGN.md`, `styles.css`, `index.html`, `app.js`, `dashboard.js`, `tests/dashboard.test.js` |
 
 The Chrome extension did not change, so `dato-extension.zip` was not rebuilt.
 
@@ -58,7 +58,7 @@ This repo was created for Mini Project 2 by copying over a concept I had been wo
 
 1. **Firewall tab (opens first):** paste a prompt or attach text files, then press **Inspect** (or Ctrl/Cmd + Enter in the prompt box). AI Firewall shows one verdict and the findings, most severe first. Turn on *Check passwords against known breaches* to also check detected passwords against Have I Been Pwned (see above). **Send** only appears after an inspection, and only while the text is exactly what was inspected. If you edit the prompt afterwards, inspect again.
 2. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
-3. **Dashboard tab:** the owner's view of this browser's log: inspections, flagged, blocked and breached-password counts, a 14-day trend, data types found, severity and outcomes, recent activity and the policies in effect. It shows a "No activity yet" card until the first inspection.
+3. **Dashboard tab:** the owner's view of this browser's log: inspections, flagged, blocked and breached-password counts, a 14-day trend (7 days with a short hint until there is activity on 3 days), data types found, severity and outcomes, the last 5 events and the policies in effect. It shows a "No activity yet" card until the first inspection.
 4. **Audit log tab:** filter events (including *Password found in breaches*), export them as JSON, or clear them. On a phone each event is a small card.
 5. **Extension tab (last tab):** download `dato-extension.zip` and follow the install steps. The extension checks prompts on ChatGPT, Claude, and Gemini before they send.
 
