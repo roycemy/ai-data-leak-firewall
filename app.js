@@ -1,9 +1,12 @@
-/* Dato — AI Data-Leak Firewall (console app)
+/* AI Firewall (formerly Dato) — console app
  * Everything runs locally. No prompt, file, or event ever leaves the browser.
+ * The one exception is the optional breach check (breach-check.js), which sends
+ * only the first 5 characters of a detected password's SHA-1 hash.
  */
 (function () {
   'use strict';
   var D = window.DatoDetect;
+  var B = window.DatoBreach;
 
   // ---------- State ----------
   var POLICY_KEY = 'dato.policies.v1';
@@ -100,6 +103,10 @@
   // when the prompt or files change, and by Clear.
   var inspectedText = null;
 
+  // breachRunId: which inspection the latest breach check belongs to. Each new
+  // Inspect, an edit and Clear add 1, so a slow answer for old text is ignored.
+  var breachRunId = 0;
+
   // Prompt box plus attached files, joined the same way every time.
   function currentText() {
     var parts = [];
@@ -112,6 +119,7 @@
   // Send needs a fresh inspection: disable it and say why.
   function requireInspection() {
     inspectedText = null;
+    breachRunId++; // any breach check still running is for old text: ignore its answer
     var sendBtn = document.getElementById('send-btn');
     sendBtn.disabled = true;
     sendBtn.textContent = 'Inspect first to send';
@@ -152,6 +160,7 @@
       topSeverity: findings.reduce(function (m, f) { return severityRank(f.severity) > severityRank(m) ? f.severity : m; }, 'low')
     });
     saveEvents();
+    return events[events.length - 1]; // the breach check adds its counts to this event
   }
 
   function groupBy(arr, key) {
@@ -180,8 +189,9 @@
     var findings = scan.findings;
     var action = evaluate(findings);
     var source = sourceOverride || parts.map(function (p) { return p.name; }).join(', ');
-    logEvent(source, findings, findings.length ? action : 'allowed-clean');
+    var event = logEvent(source, findings, findings.length ? action : 'allowed-clean');
     renderScanResult(promptText, combined, findings, action);
+    runBreachCheck(promptText, combined, findings, action, event); // async; only if the box is ticked
     return { findings: findings, action: action, combined: combined };
   }
 
@@ -223,7 +233,8 @@
         '<span class="policy-tag policy-' + (policies[cat] || 'warn') + '">' + ACTION_LABEL[policies[cat] || 'warn'] + '</span></div>';
       list.forEach(function (f) {
         html += '<div class="finding sev-' + f.severity + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
-          '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code></div>';
+          '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code>' +
+          (f.breachCount ? '<span class="breach-tag">Confirmed breached</span>' : '') + '</div>';
       });
       html += '</div>';
     });
@@ -255,6 +266,73 @@
       sendBtn.disabled = false;
       sendBtn.textContent = action === 'warn' ? 'I understand — send anyway (simulated)' : 'Send to AI (simulated)';
       sendBtn.dataset.mode = 'send';
+    }
+  }
+
+  // ---------- Breach check (Mini Project 3) ----------
+  var breachBox = document.getElementById('breach-check');
+
+  // Show one note under the inspection result. kind: muted | loading | error | bad | good
+  function showBreachNote(kind, html) {
+    var note = document.createElement('div');
+    note.id = 'breach-note';
+    note.className = 'breach-note breach-' + kind;
+    if (kind === 'loading') note.setAttribute('aria-busy', 'true');
+    note.innerHTML = html;
+    var old = document.getElementById('breach-note');
+    if (old) old.replaceWith(note);
+    else document.getElementById('scan-result').appendChild(note);
+  }
+
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+
+  // Reads: breachBox, breachRunId. Changes: the findings' severity, the event's
+  // counts (breachChecked, breached, breachError) and the result panel.
+  async function runBreachCheck(promptText, combined, findings, action, event) {
+    var myRun = ++breachRunId;
+    if (!breachBox.checked) return;                       // off by default: no network call
+
+    var found = B.passwordsFrom(combined, findings);
+    if (!found.length) {
+      showBreachNote('muted', 'No passwords found, so nothing was sent to Have I Been Pwned.');
+      return;
+    }
+    showBreachNote('loading', 'Checking ' + plural(found.length, 'password') + ' against known breaches…');
+
+    var outcome = await B.checkAll(found);                // every fetch is inside try/catch there
+    if (myRun !== breachRunId) return;                    // the text changed while we waited
+
+    if (outcome.error) {
+      event.breachError = true; saveEvents();
+      showBreachNote('error', '<b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
+        '. The local scan above still applies.');
+      return;
+    }
+
+    // Worked-out result: a password seen in breaches becomes a critical finding.
+    outcome.results.forEach(function (r) {
+      if (r.count > 0) {
+        findings[r.findingIndex].severity = 'critical';
+        findings[r.findingIndex].breachCount = r.count;
+      }
+    });
+    // Save counts only: never the password, the hash or the prefix.
+    event.breachChecked = outcome.checked;
+    event.breached = outcome.breached;
+    if (outcome.breached) event.topSeverity = 'critical';
+    saveEvents();
+
+    renderScanResult(promptText, combined, findings, action); // redraw with CRITICAL + tag
+    if (outcome.breached) {
+      var items = outcome.results.filter(function (r) { return r.count > 0; }).map(function (r) {
+        return '<li>' + escapeHTML(findings[r.findingIndex].masked) + ': seen <b>' +
+          r.count.toLocaleString() + '</b> times in known breaches</li>';
+      }).join('');
+      showBreachNote('bad', '⛔ <b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
+        ' confirmed breached.</b> Attackers try these first. Change it everywhere it is used.<ul>' + items + '</ul>');
+    } else {
+      showBreachNote('good', '✓ <b>Not found in known breaches</b> (' + plural(outcome.checked, 'password') +
+        ' checked). That does not make it safe to paste into an AI tool.');
     }
   }
 
@@ -376,6 +454,7 @@
   });
   armedButton('reset-all', 'Click again to reset everything', function () {
     policies = Object.assign({}, DEFAULT_POLICIES); savePolicies();
+    breachBox.checked = false; // the breach check is off by default
     events = []; saveEvents();
     clearConsole(); renderPolicies(); renderActivity(); renderDashboard();
     showView('firewall');

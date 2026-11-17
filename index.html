@@ -64,6 +64,12 @@
           <button id="send-btn" class="btn btn-secondary" disabled>Inspect first to send</button>
           <button id="clear-btn" class="btn btn-ghost">Clear</button>
         </div>
+        <!-- Mini Project 3: optional breach check (the page's only network call). Off by default. -->
+        <div class="breach-option">
+          <input type="checkbox" id="breach-check" aria-describedby="breach-privacy">
+          <label for="breach-check">Also check detected passwords against known breaches</label>
+          <p id="breach-privacy" class="breach-privacy">Uses the free <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> Pwned Passwords API. Only the first 5 characters of the password's SHA-1 hash leave this browser. The password and its full hash never do, and only counts are saved.</p>
+        </div>
       </div>
       <div class="panel">
         <div class="panel-head"><span class="panel-title">Inspection result</span><span class="local-badge">on-device</span></div>
@@ -198,6 +204,7 @@ Test card: 4111 1111 1111 1111</pre>
 </footer>
 
 <script src="detectors.js"></script>
+<script src="breach-check.js"></script>
 <script src="app.js"></script>
 <script src="assessment.js"></script>
 </body>
