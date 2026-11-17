@@ -8,7 +8,7 @@ AI Firewall (first called Dato; the repo and the Chrome extension still use that
 
 ## Mini Project 3: breach check for passwords
 
-**What it does.** When AI Firewall finds a password in a prompt (for example "my password is …" or `db_password = "…"`), it can also check whether that password has already leaked in a known data breach. A password found in breaches is raised to a **critical** finding and tagged "Found in breaches", and the result says how many times it has been seen. This means that password string appears in breach data, not that your own account was breached. The audit log and Risk dashboard count it.
+**What it does.** When AI Firewall finds a password in a prompt (for example "my password is …" or `db_password = "…"`), it can also check whether that password has already leaked in a known data breach. A password found in breaches is raised to a **Critical** finding with a "Found in breaches" badge in its own row, which also says how many times it has been seen. This means that password string appears in breach data, not that your own account was breached. The audit log and the Dashboard count it.
 
 **The API.** [Have I Been Pwned — Pwned Passwords](https://haveibeenpwned.com/API/v3#PwnedPasswords), range endpoint: `GET https://api.pwnedpasswords.com/range/{first 5 characters of the SHA-1 hash}`. It is free, needs no API key, and allows calls from the browser (it sends `Access-Control-Allow-Origin: *`).
 
@@ -17,9 +17,9 @@ AI Firewall (first called Dato; the repo and the Chrome extension still use that
 **How to use it.**
 1. Open the **Firewall** tab.
 2. Tick **Also check detected passwords against known breaches** (it is off by default).
-3. Paste a prompt that contains a password, for example `my password is password123`, and press **Inspect locally**.
+3. Paste a prompt that contains a password, for example `my password is password123`, and press **Inspect**.
 4. Under the result you see "Checking…", then either a red "found in known breaches" note with the count or a green "Not found in known breaches" note.
-5. Open **Audit log** (filter: *Password found in breaches*) or **Risk dashboard** (*Inspections with a breached password*) to see the count. The dashboard counts inspections, so inspecting the same prompt twice counts twice.
+5. Open **Audit log** (filter: *Password found in breaches*) or **Dashboard** (*Breached passwords*, captioned "Inspections with a breached password") to see the count. The dashboard counts inspections, so inspecting the same prompt twice counts twice.
 
 **Every state** (from [PRD.md](PRD.md)): box off: no network call at all. Nothing to check: "No passwords found, so nothing was sent". Loading: "Checking N passwords…". Error (offline, network failure or a non-OK status such as 404, 429 or 503): an amber "Breach check unavailable" note, and the normal local scan, verdict and Send rule still work. Invalid input (nothing to inspect): the usual red message and no call. Edited while checking: the old answer is ignored. After Reset everything: the box is unticked and the count is 0.
 
@@ -33,13 +33,14 @@ This is the same repo, expanded on purpose for Mini Project 3. Mini Project 2 is
 | --- | --- |
 | Planning docs first: AGENTS.md now allows this one API call and nothing else; PROPOSAL.md and PRD.md describe the breach check and every state; DESIGN.md styles it. PROPOSAL.md no longer calls the extension dashboard a mock-up (commit `a91da88` replaced it) | `AGENTS.md`, `PROPOSAL.md`, `PRD.md`, `DESIGN.md` |
 | Breach check with Have I Been Pwned (the API requirement) | `breach-check.js`, `app.js`, `index.html`, `styles.css` |
-| "Found in breaches" count in the audit log (column and filter) and on the Risk dashboard | `app.js`, `index.html` |
+| "Found in breaches" count in the audit log (column and filter) and on the Dashboard | `app.js`, `index.html` |
 | The site shows the name AI Firewall instead of Dato | `index.html`, `app.js`, `assessment.js` |
 | Tests for hashing, response parsing, non-OK and offline handling | `tests/breach-check.test.js` |
+| UI polish after review: a tighter design system first (DESIGN.md), then a calmer Firewall (one primary button, a switch with a short privacy line, one verdict banner, the breach result inside the password's row), a Dashboard built as the owner's home (stats, 14-day SVG trend, data types, severity and outcomes, recent activity, policies, empty state, "this device only" note) and an audit log that becomes stacked cards on a phone | `DESIGN.md`, `styles.css`, `index.html`, `app.js`, `dashboard.js`, `tests/dashboard.test.js` |
 
 The Chrome extension did not change, so `dato-extension.zip` was not rebuilt.
 
-**Where the agent's build differed from what I expected (Mini Project 3):** I expected a checkbox and a result line; the agent also added a "Breach check" column and a "Password found in breaches" filter in the audit log and a fifth dashboard card, and it only checks passwords the detector already flagged, so a password pasted on its own with no word like "password" in front of it is not checked. *(Royce: edit this line if it does not match what you expected.)*
+**Where the agent's build differed from what I expected (Mini Project 3):** I expected a checkbox and a result line; the agent also added a "Breach check" column and a "Password found in breaches" filter in the audit log and a "Breached passwords" dashboard card, and it only checks passwords the detector already flagged, so a password pasted on its own with no word like "password" in front of it is not checked. *(Royce: edit this line if it does not match what you expected.)*
 
 ## Required question (Mini Project 3): AI output I did not accept as-is
 
@@ -55,10 +56,10 @@ This repo was created for Mini Project 2 by copying over a concept I had been wo
 
 ## How to use
 
-1. **Firewall tab (opens first):** paste a prompt or attach text files, then press **Inspect locally** (or Ctrl/Cmd + Enter in the prompt box). AI Firewall shows what it found and what your policy says to do. Tick the breach-check box to also check detected passwords against Have I Been Pwned (see above). **Send** is only available after an inspection, and only while the text is exactly what was inspected. If you edit the prompt afterwards, inspect again.
+1. **Firewall tab (opens first):** paste a prompt or attach text files, then press **Inspect** (or Ctrl/Cmd + Enter in the prompt box). AI Firewall shows one verdict and the findings, most severe first. Turn on *Check passwords against known breaches* to also check detected passwords against Have I Been Pwned (see above). **Send** only appears after an inspection, and only while the text is exactly what was inspected. If you edit the prompt afterwards, inspect again.
 2. **Policies tab:** set Allow / Warn / Redact / Block for each data class and inspect again to see the verdict change. **Reset everything** restores defaults and clears the log.
-3. **Audit log tab:** filter events (including *Password found in breaches*), export them as JSON, or clear them.
-4. **Risk dashboard tab:** totals and charts computed from the log.
+3. **Dashboard tab:** the owner's view of this browser's log: inspections, flagged, blocked and breached-password counts, a 14-day trend, data types found, severity and outcomes, recent activity and the policies in effect. It shows a "No activity yet" card until the first inspection.
+4. **Audit log tab:** filter events (including *Password found in breaches*), export them as JSON, or clear them. On a phone each event is a small card.
 5. **Extension tab (last tab):** download `dato-extension.zip` and follow the install steps. The extension checks prompts on ChatGPT, Claude, and Gemini before they send.
 
 Empty or invalid input (nothing to inspect, file over 2 MB, unreadable file) shows a message in the page. Nothing uses pop-up dialogs. Every control can be reached with the Tab key.
@@ -91,7 +92,7 @@ Employees paste customer records, credentials, source code, contracts, and finan
 - **Policy controls** — per data class: **Allow / Warn / Redact / Block**. Redaction produces a safe-to-send copy with placeholders.
 - **Breach check (optional)** — detected passwords can be checked against Have I Been Pwned's Pwned Passwords list; only a 5-character hash prefix is sent.
 - **Audit log** — every scan, policy decision, and simulated send is logged locally and exportable as JSON.
-- **Risk dashboard** — findings by data class, policy outcomes, 7-day activity, and current posture at a glance.
+- **Dashboard** — inspections, flagged, blocked and breached-password counts, a 14-day trend (hand-written SVG), data types found, severity and outcomes, recent activity and policies in effect. Built from this browser's log only.
 - **Authorized synthetic assessment** — a guided demo for a fictional company (*Northstar Robotics*) that generates obviously fake credentials, PII, and financials, runs four realistic workplace scenarios, and produces an exportable risk report. **Synthetic data only — no real person, company, credential, or network is involved or contacted.**
 
 ## Run the web app
@@ -115,6 +116,7 @@ node --test tests/zip.test.js
 node --test tests/store.test.js
 node --test tests/false-flags.test.js
 node --test tests/breach-check.test.js
+node --test tests/dashboard.test.js
 ```
 
 Or all at once: `node --test tests/*.test.js`. The breach-check tests replace `fetch` with a fake, so they need no network.
@@ -125,13 +127,14 @@ The second one checks that the download is a real ZIP file.
 
 | File | Role |
 | --- | --- |
-| `index.html` | App shell: Firewall console (opens first), Policies, Audit log, Risk dashboard, Assessment, Extension download |
+| `index.html` | App shell: Firewall console (opens first), Dashboard, Audit log, Policies, Assessment, Extension download |
 | `breach-check.js` | Breach check: SHA-1 hashing, the Pwned Passwords range `fetch`, response parsing (Mini Project 3) |
 | `detectors.js` | Pure detection engine (patterns + heuristics + redaction). Runs in browser or Node (`module.exports`). |
-| `app.js` | Console UI, policy state, local audit log, dashboard |
+| `app.js` | Console UI, policy state, local audit log, dashboard rendering |
+| `dashboard.js` | Dashboard and log maths and wording: totals, 14-day trend, SVG chart, plain-language event text (pure functions, tested) |
 | `assessment.js` | Synthetic assessment module |
-| `tests/*.test.js` | Tests with Node's built-in runner: detectors, false flags, extension store, ZIP, breach check |
-| `styles.css` | Brand and component system |
+| `tests/*.test.js` | Tests with Node's built-in runner: detectors, false flags, extension store, ZIP, breach check, dashboard |
+| `styles.css` | Styles following the design system in `DESIGN.md` |
 | `extension/` | Chrome extension (Manifest V3) for ChatGPT, Claude, and Gemini |
 | `dato-extension.zip` | Zipped copy of `extension/` for the download button |
 | `tools/build-zip.py` | Rebuilds `dato-extension.zip` as a real ZIP (`python tools/build-zip.py`) |
