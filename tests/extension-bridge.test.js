@@ -128,3 +128,12 @@ test('the bridge runs only on the AI Firewall site', () => {
   assert.ok(!/postMessage\([^)]*['"]\*['"]/.test(src), 'never posts to "*"');
   assert.ok(/postMessage\(message\([^)]*\), SITE_ORIGIN\)/.test(src), 'posts to the exact site origin');
 });
+
+test('Inspections card is this website only: the bridge has no inspection count, only flagged totals', () => {
+  const keys = Object.keys(Bridge.message([]).summary);
+  assert.ok(!keys.includes('inspections') && !keys.includes('scans'));
+  assert.ok(keys.includes('total'));
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert.match(html, /<p class="caption">Inspections on this website<\/p>/);
+  assert.doesNotMatch(html, /<p class="caption">Inspections<\/p>/);
+});
