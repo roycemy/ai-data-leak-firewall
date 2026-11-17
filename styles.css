@@ -311,6 +311,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .status-critical { color: var(--critical); }
 .status-ok { color: var(--ok); }
 .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.stat-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .stat-card { padding: 20px 24px; }
 .stat-num { font-size: 32px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; margin-top: 8px; }
 .stat-sub { font-size: 13px; line-height: 20px; color: var(--text-2); }
@@ -369,7 +370,10 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .posture-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 14px; line-height: 20px; }
 .posture-list li:first-child { border-top: 0; padding-top: 0; }
 @media (max-width: 960px) { .dash-grid { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 800px) { .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 800px) {
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 720px) {
   .stat-card { padding: 16px; }
   .stat-num { font-size: 28px; line-height: 36px; }
@@ -411,6 +415,49 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
   .toolbar .select { flex: 1; min-width: 0; }
 }
 
+
+/* ---- Simplified dashboard ---- */
+.dash-head { display: flex; flex-direction: column; align-items: stretch; }
+.hero-row { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.hero-status {
+  margin: 0;
+  font-size: 32px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  flex: 1 1 16rem;
+}
+.hero-status.hero-install { color: var(--text); }
+.hero-actions { margin: 16px 0 0; }
+.hero-actions .btn[hidden], #ext-status[hidden], #get-extension[hidden] { display: none; }
+#password-alert { margin-top: 16px; }
+.catch-list { list-style: none; margin: 0; padding: 0; }
+.catch-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--text-2);
+}
+.catch-list .catch-row:first-child { border-top: 0; padding-top: 0; }
+.catch-label { color: var(--text); font-weight: 500; }
+.catch-row time { font-size: 13px; line-height: 20px; color: var(--text-2); }
+.audit-card { margin-top: 16px; }
+.setup-policies { margin-top: 24px; }
+#view-assessment { margin-top: 32px; }
+#see-all {
+  background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  color: var(--accent); font-size: 14px; line-height: 20px; font-weight: 500;
+}
+#see-all:hover { color: var(--accent-strong); }
+.badge-icon { width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; }
+@media (max-width: 720px) {
+  .hero-status { font-size: 28px; line-height: 34px; }
+  .stat-grid-3 .stat-card { padding: 12px; }
+  .stat-grid-3 .stat-num { font-size: 24px; line-height: 30px; }
+}
+
 /* ---- Footer ---- */
 .footer {
   max-width: 1160px; margin: 0 auto; padding: 24px 32px 32px;
@@ -429,7 +476,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 @media (max-width: 900px) { .install-grid, .compare { grid-template-columns: 1fr; } }
 @media (max-width: 720px) {
   .topbar { position: static; height: auto; flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px 8px; }
-  /* Six tabs in two even rows of three, so every tab is visible without scrolling */
+  /* Three tabs in one row, so every tab is visible without scrolling */
   .nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
   .nav-link { text-align: center; padding-left: 4px; padding-right: 4px; white-space: nowrap; }
   .main { padding: 24px 16px 48px; }

@@ -34,20 +34,53 @@
   }
 
   // ---------- Navigation ----------
-  var views = ['install', 'firewall', 'policies', 'activity', 'dashboard', 'assessment'];
+  // Three tabs. Older hashes still resolve to the tab that replaced them.
+  var tabs = ['dashboard', 'try', 'setup'];
+  var HASH_TO_TAB = {
+    dashboard: 'dashboard',
+    try: 'try', 'try-it': 'try', firewall: 'try', assessment: 'try',
+    setup: 'setup', policies: 'setup', extension: 'setup', install: 'setup',
+    activity: 'dashboard', audit: 'dashboard'
+  };
+  function tabFor(name) { return HASH_TO_TAB[name] || 'dashboard'; }
+  function setHash(name) {
+    if (location.hash.slice(1) !== name) location.hash = name;
+  }
+  function openAudit() {
+    var panel = document.getElementById('view-activity');
+    panel.hidden = false;
+    document.getElementById('see-all').setAttribute('aria-expanded', 'true');
+    document.getElementById('see-all').textContent = 'Hide log';
+    renderActivity();
+  }
+  function closeAudit() {
+    var panel = document.getElementById('view-activity');
+    panel.hidden = true;
+    document.getElementById('see-all').setAttribute('aria-expanded', 'false');
+    document.getElementById('see-all').textContent = 'See all';
+  }
   function showView(name) {
-    views.forEach(function (v) {
-      document.getElementById('view-' + v).classList.toggle('active', v === name);
-      document.getElementById('nav-' + v).classList.toggle('active', v === name);
-      if (v === name) document.getElementById('nav-' + v).setAttribute('aria-current', 'page');
+    var tab = tabFor(name);
+    tabs.forEach(function (v) {
+      document.getElementById('view-' + v).classList.toggle('active', v === tab);
+      document.getElementById('nav-' + v).classList.toggle('active', v === tab);
+      if (v === tab) document.getElementById('nav-' + v).setAttribute('aria-current', 'page');
       else document.getElementById('nav-' + v).removeAttribute('aria-current');
     });
-    if (name === 'activity') renderActivity();
-    if (name === 'dashboard') renderDashboard();
-    location.hash = name;
+    if (tab === 'dashboard') {
+      renderDashboard();
+      if (name === 'activity' || name === 'audit') openAudit();
+      else if (name === 'dashboard') closeAudit();
+    }
+    if (tab === 'try' && name === 'assessment' && window.DatoAssessment) window.DatoAssessment.open();
+    // Keep #activity / #audit / #assessment in the URL so those links still land correctly.
+    setHash(HASH_TO_TAB[name] ? name : tab);
   }
-  views.forEach(function (v) {
+  tabs.forEach(function (v) {
     document.getElementById('nav-' + v).addEventListener('click', function (e) { e.preventDefault(); showView(v); });
+  });
+  window.addEventListener('hashchange', function () {
+    showView((location.hash || '#dashboard').slice(1));
   });
 
   document.getElementById('skip-link').addEventListener('click', function (e) {
@@ -476,15 +509,36 @@
   // ---------- Audit log ----------
   // A table on wide screens; below 720px the CSS stacks each row into a small card
   // (each cell carries a data-label for that).
+  function mergedLogEvents() {
+    var list = events.map(function (e) { return { kind: 'site', ts: e.ts, event: e }; });
+    (extRecent || []).forEach(function (e) {
+      list.push({ kind: 'extension', ts: e.time, event: e });
+    });
+    list.sort(function (a, b) { return b.ts - a.ts; });
+    return list;
+  }
   function renderActivity() {
     var wrap = document.getElementById('activity-list');
     var filter = document.getElementById('activity-filter').value;
-    var list = events.slice().reverse().filter(function (e) {
+    var all = mergedLogEvents();
+    var list = all.filter(function (row) {
       if (filter === 'all') return true;
+      if (row.kind === 'extension') {
+        if (filter === 'breached') return false;
+        if (filter === 'stopped' || filter === 'sent anyway' || filter === 'redacted' || filter === 'allowed-clean') {
+          if (filter === 'allowed-clean') return row.event.outcome === 'allowed' || row.event.outcome === 'clean';
+          return row.event.outcome === filter;
+        }
+        return false;
+      }
+      var e = row.event;
       if (filter === 'breached') return e.breached > 0;
+      if (filter === 'stopped') return e.action === 'block';
+      if (filter === 'sent anyway') return e.action === 'sent-send';
       return e.action === filter;
     });
-    document.getElementById('log-count').textContent = events.length ? '· ' + list.length + ' of ' + events.length : '';
+    var total = all.length;
+    document.getElementById('log-count').textContent = total ? '· ' + list.length + ' of ' + total : '';
     if (!list.length) {
       wrap.innerHTML = filter === 'all'
         ? emptyState('list', 'No events yet', 'Inspections, simulated sends and policy changes appear here for audit.')
@@ -492,19 +546,33 @@
       return;
     }
     var html = '<table class="log-table"><thead><tr><th>Time</th><th>Event</th><th>Severity</th><th>Outcome</th><th>Breach check</th></tr></thead><tbody>';
-    list.forEach(function (e) {
-      var d = DB.describe(e, D.CATEGORIES);
-      var when = new Date(e.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
-      html += '<tr>' +
-        '<td class="log-time" data-label="Time"><time datetime="' + new Date(e.ts).toISOString() + '">' + when + '</time></td>' +
+    list.forEach(function (row) {
+      var when = new Date(row.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      var timeCell = '<td class="log-time" data-label="Time"><time datetime="' + new Date(row.ts).toISOString() + '">' + when + '</time></td>';
+      if (row.kind === 'extension') {
+        var e = row.event;
+        var site = EXT.siteName(e.site);
+        html += '<tr>' + timeCell +
+          '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(e.label) + '</span><span class="log-source">' + escapeHTML(site) + '</span></td>' +
+          '<td data-label="Severity" class="log-na"><span class="muted">—</span></td>' +
+          '<td data-label="Outcome"><span class="badge ' + outcomeBadge(e.outcome) + '"><span class="dot" aria-hidden="true"></span>' + escapeHTML(e.outcome.charAt(0).toUpperCase() + e.outcome.slice(1)) + '</span></td>' +
+          '<td data-label="Breach check" class="log-na"><span class="muted">—</span></td></tr>';
+        return;
+      }
+      var ev = row.event;
+      var d = DB.describe(ev, D.CATEGORIES);
+      html += '<tr>' + timeCell +
         '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(d.title) + '</span><span class="log-source">' + escapeHTML(d.source) + '</span></td>' +
-        (DB.isScan(e) ? '<td data-label="Severity">' + (e.total ? sevBadge(e.topSeverity) : '<span class="muted">—</span>') + '</td>'
+        (DB.isScan(ev) ? '<td data-label="Severity">' + (ev.total ? sevBadge(ev.topSeverity) : '<span class="muted">—</span>') + '</td>'
                       : '<td data-label="Severity" class="log-na"><span class="muted">—</span></td>') +
         '<td data-label="Outcome"><span class="badge ' + d.outcomeCls + '"><span class="dot" aria-hidden="true"></span>' + d.outcome + '</span></td>' +
-        (DB.isScan(e) ? '<td data-label="Breach check">' + breachCell(e) + '</td>'
+        (DB.isScan(ev) ? '<td data-label="Breach check">' + breachCell(ev) + '</td>'
                       : '<td data-label="Breach check" class="log-na"><span class="muted">—</span></td>') + '</tr>';
     });
     wrap.innerHTML = html + '</tbody></table>';
+  }
+  function outcomeBadge(outcome) {
+    return ({ stopped: 'badge-critical', 'sent anyway': 'badge-high', redacted: 'badge-info', allowed: 'badge-ok', warned: 'badge-high', clean: 'badge-ok' })[outcome] || 'badge-low';
   }
   // What the log shows for the breach check: counts only, never the password.
   function breachCell(e) {
@@ -533,156 +601,106 @@
     });
   }
   armedButton('clear-log', 'Click again to confirm', function () {
-    events = []; saveEvents(); renderActivity();
+    events = []; saveEvents(); renderActivity(); renderDashboard();
   });
   armedButton('reset-all', 'Click again to reset everything', function () {
     policies = Object.assign({}, DEFAULT_POLICIES); savePolicies();
     breachBox.checked = false; // the breach check is off by default
     events = []; saveEvents();
     clearConsole(); renderPolicies(); renderActivity(); renderDashboard();
-    showView('firewall');
+    showView('dashboard');
   });
 
   // ---------- Dashboard ----------
   // The numbers and charts come from dashboard.js (pure functions over `events`).
   var DB = window.DatoDashboard;
 
-  // Counts from the Chrome extension, posted by its bridge content script
-  // (extension/bridge.js). Counts and labels only, kept in memory, never saved.
+  // Counts and recent-catch labels from the Chrome extension, posted by its
+  // bridge content script (extension/bridge.js). Labels only, kept in memory, never saved.
   var EXT = window.DatoExtensionLink;
   var extSummary = null;
+  var extRecent = [];
   var SHIELD_ICON = '<svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>';
-  // Changes: extSummary, then redraws the Dashboard.
   window.addEventListener('message', function (e) {
     if (!EXT.isFromExtension(e, window)) return;
-    var s = EXT.validate(e.data);
-    if (!s) return;
-    extSummary = s;
+    var msg = EXT.validate(e.data);
+    if (!msg) return;
+    extSummary = msg.summary;
+    extRecent = msg.recent;
     renderDashboard();
+    if (!document.getElementById('view-activity').hidden) renderActivity();
   });
   // Ask once in case the extension loaded before this listener did.
   window.postMessage({ type: EXT.REQUEST_TYPE }, location.origin);
 
-  // Reads: extSummary. Changes: the extension card only.
-  function renderExtensionCard() {
+  function renderConnectedBadge() {
     var badge = document.getElementById('ext-status');
-    // Connected uses the cobalt brand badge with the shield mark (cobalt never means "safe").
-    badge.className = 'badge ' + (extSummary ? 'badge-info' : 'badge-low');
-    badge.innerHTML = (extSummary ? SHIELD_ICON : '<span class="dot"></span>') + (extSummary ? 'Connected' : 'Not connected');
-    var ago = extSummary && extSummary.lastAt ? DB.timeAgo(extSummary.lastAt, Date.now()) : '';
-    document.getElementById('ext-body').innerHTML = EXT.cardHTML(extSummary, ago);
+    var connected = !!extSummary;
+    badge.hidden = !connected;
+    badge.className = 'badge badge-info';
+    badge.innerHTML = SHIELD_ICON + 'Connected';
+    document.getElementById('get-extension').hidden = connected;
   }
-  document.getElementById('ext-body').addEventListener('click', function (e) {
-    var link = e.target.closest && e.target.closest('[data-goto]');
-    if (link) { e.preventDefault(); showView(link.getAttribute('data-goto')); }
-  });
 
-  // Reads: events, policies. Changes: the Dashboard view only.
+  // Reads: events, extSummary, extRecent. Changes: the Dashboard view only.
   function renderDashboard() {
-    var cats = Object.keys(D.CATEGORIES);
-    var s = DB.summarize(events, cats);
-    var empty = s.inspections === 0;
+    var cats = D.CATEGORIES;
+    var s = DB.summarize(events, Object.keys(cats));
     var extFlagged = extSummary ? extSummary.total : 0;
     var extBlocked = extSummary ? extSummary.byAction.block : 0;
-    renderExtensionCard();
-
-    // Stat cards: a number and one line of context each. Flagged and Blocked add the
-    // extension's counts and say so; Inspections is this website only (the extension
-    // records flagged prompts, not every prompt).
-    setStat('stat-scans', s.inspections, empty ? 'Nothing inspected on this website yet' : plural(s.findings, 'finding') + ' caught');
-    setStat('stat-flagged', s.flagged + extFlagged, EXT.statCaption(empty ? 'With confidential data' : Math.round(s.flagged / s.inspections * 100) + '% of inspections', extFlagged));
-    setStat('stat-blocked', s.blocked + extBlocked, EXT.statCaption('Stopped before sending', extBlocked));
-    setStat('stat-breached', s.breachedInspections, 'Inspections with a breached password');
-    document.getElementById('view-dashboard').classList.toggle('is-empty', empty && !extFlagged);
-    document.getElementById('dash-empty').hidden = !empty;
-    document.getElementById('dash-content').hidden = empty;
-    var line = document.getElementById('status-line');
-    line.hidden = empty;
-    if (empty) return;
-
-    // One line that answers "is it working, and does anything need me?"
-    var st = DB.status(events, Date.now());
-    line.className = 'status-line status-' + st.kind;
-    line.textContent = st.text;
-
-    // Activity over the last 14 days. With activity on fewer than 3 days, a 14-day chart
-    // is mostly empty, so show the last 7 days and say the chart fills in over time.
-    var days = DB.dailyTrend(events, 14, Date.now());
-    var young = DB.activeDays(days) < 3;
-    if (young) days = days.slice(-7);
-    document.getElementById('trend-range').textContent = '· last ' + days.length + ' days';
-    document.getElementById('trend').innerHTML = DB.trendChart(days) + (young
-      ? '<p class="trend-hint">Activity will build up over the next few days. Each bar is one day of inspections in this browser.</p>'
-      : '');
-
-    // Data types, most found first.
-    var typeRows = cats.map(function (c) { return { label: D.CATEGORIES[c].label, value: s.byCategory[c] }; })
-      .sort(function (a, b) { return b.value - a.value; });
-    document.getElementById('cat-bars').innerHTML = s.findings
-      ? DB.bars(typeRows, s.findings)
-      : '<p class="card-caption">No confidential data found yet.</p>';
-
-    // Severity (worst finding per flagged inspection) and policy outcomes.
-    document.getElementById('sev-stack').innerHTML = DB.stacked(DB.SEVERITIES.map(function (v) {
-      return { value: s.bySeverity[v], cls: 'seg-' + v };
-    }));
-    document.getElementById('sev-legend').innerHTML = DB.SEVERITIES.map(function (v) {
-      return '<li>' + sevBadge(v) + '<span class="num">' + s.bySeverity[v] + '</span></li>';
-    }).join('');
-    var outcomes = [
-      { word: 'Blocked', value: s.blocked, cls: 'seg-critical', badge: 'badge-critical' },
-      { word: 'Warned', value: s.warned, cls: 'seg-high', badge: 'badge-high' },
-      { word: 'Redacted', value: s.redacted, cls: 'seg-info', badge: 'badge-info' },
-      { word: 'Clean', value: s.clean, cls: 'seg-ok', badge: 'badge-ok' }
-    ];
-    document.getElementById('outcome-stack').innerHTML = DB.stacked(outcomes);
-    document.getElementById('outcome-legend').innerHTML = outcomes.map(function (o) {
-      return '<li><span class="badge ' + o.badge + '"><span class="dot"></span>' + o.word + '</span><span class="num">' + o.value + '</span></li>';
-    }).join('');
-
-    // Recent activity: the last 6 events, newest first.
     var now = Date.now();
-    document.getElementById('recent').innerHTML = events.slice(-5).reverse().map(function (e) {
-      var d = DB.describe(e, D.CATEGORIES);
-      var breach = DB.breachText(e);
-      return '<li class="recent-row"><span class="badge ' + d.outcomeCls + '"><span class="dot"></span>' + d.outcome + '</span>' +
-        '<div class="recent-main"><p class="recent-title">' + escapeHTML(d.title) + '</p>' +
-        '<p class="recent-meta">' + d.source + (breach ? ' · ' + breach : '') + '</p></div>' +
-        '<time class="recent-time" datetime="' + new Date(e.ts).toISOString() + '">' + DB.timeAgo(e.ts, now) + '</time></li>';
-    }).join('');
+    var dayStart = DB.startOfDay(now);
+    var weekStart = dayStart - (DB.WEEK - 86400000);
+    var hero = DB.hero({
+      connected: !!extSummary,
+      stopsToday: DB.stops(events, extRecent, dayStart, now + 1),
+      stopsWeek: DB.stops(events, extRecent, weekStart, now + 1)
+    });
+    var heroEl = document.getElementById('hero-status');
+    heroEl.textContent = hero.text;
+    heroEl.className = 'hero-status hero-' + hero.kind;
+    renderConnectedBadge();
 
-    // Policies in effect, each with what it covers (two lines, like the recent-activity rows).
-    document.getElementById('posture-line').innerHTML = cats.map(function (c) {
-      return '<li><div><p class="recent-title">' + D.CATEGORIES[c].label + '</p><p class="recent-meta">' + policyDescription(c) + '</p></div>' +
-        '<span class="badge policy-' + policies[c] + '">' + ACTION_LABEL[policies[c]] + '</span></li>';
+    var alert = DB.passwordAlert(events);
+    var alertEl = document.getElementById('password-alert');
+    if (alert) { alertEl.hidden = false; alertEl.textContent = alert.text; }
+    else { alertEl.hidden = true; alertEl.textContent = ''; }
+
+    document.getElementById('stat-flagged').textContent = s.flagged + extFlagged;
+    document.getElementById('stat-blocked').textContent = s.blocked + extBlocked;
+    document.getElementById('stat-sent').textContent = DB.sentAnyway(events, extSummary);
+
+    var nowText = now;
+    document.getElementById('recent-catches').innerHTML = DB.mergeCatches(events, extRecent, cats, 8).map(function (c) {
+      var site = c.source === 'extension' ? EXT.siteName(c.site) : c.site;
+      return '<li class="catch-row"><span class="catch-label">' + escapeHTML(c.label) + '</span>' +
+        ' · ' + escapeHTML(c.outcome) + ' · ' + escapeHTML(site) + ' · ' +
+        '<time datetime="' + new Date(c.time).toISOString() + '">' + DB.timeAgo(c.time, nowText) + '</time></li>';
     }).join('');
   }
-  // A stat card: the number and its one-line caption.
-  function setStat(id, value, sub) {
-    document.getElementById(id).textContent = value;
-    document.getElementById(id + '-sub').textContent = sub;
-  }
 
-  var firewallLink = document.getElementById('goto-firewall');
-  firewallLink.addEventListener('click', function (e) { e.preventDefault(); showView('firewall'); });
-
-  document.getElementById('goto-install').addEventListener('click', function (e) { e.preventDefault(); showView('install'); });
-
-  ['dash-goto-firewall', 'goto-activity'].forEach(function (id) {
-    var link = document.getElementById(id);
-    link.addEventListener('click', function (e) { e.preventDefault(); showView(link.getAttribute('href').slice(1)); });
+  document.getElementById('see-all').addEventListener('click', function () {
+    if (document.getElementById('view-activity').hidden) {
+      openAudit();
+      setHash('activity');
+    } else {
+      closeAudit();
+      setHash('dashboard');
+    }
   });
 
-  var policiesLink = document.getElementById('goto-policies');
-  policiesLink.addEventListener('click', function (e) { e.preventDefault(); showView('policies'); });
+  var firewallLink = document.getElementById('goto-firewall');
+  firewallLink.addEventListener('click', function (e) { e.preventDefault(); showView('try'); });
+
+  document.getElementById('goto-install').addEventListener('click', function (e) { e.preventDefault(); showView('setup'); });
+  document.getElementById('get-extension').addEventListener('click', function (e) { e.preventDefault(); showView('setup'); });
 
   // ---------- Boot ----------
   document.getElementById('scan-result').innerHTML = EMPTY_RESULT;
   renderPolicies();
-  // Home is the Dashboard once there is something to report; before the first
-  // inspection the app opens on the Firewall, where there is something to do.
-  var initial = (location.hash || (events.length ? '#dashboard' : '#firewall')).slice(1);
-  showView(views.indexOf(initial) !== -1 ? initial : 'install');
+  // Dashboard is home and the default. Older hashes still open the matching tab.
+  var initial = (location.hash || '#dashboard').slice(1);
+  showView(HASH_TO_TAB[initial] ? initial : 'dashboard');
 
   // Expose a small API for the assessment module
   window.DatoApp = {
