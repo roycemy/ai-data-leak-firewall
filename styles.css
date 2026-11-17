@@ -37,7 +37,7 @@ h1, h2, h3, p { margin: 0; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .muted { color: var(--text-2); }
 .num { font-variant-numeric: tabular-nums; }
-code { font-family: var(--mono); font-size: 0.875em; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+code { font-family: var(--mono); font-size: 0.875em; background: var(--surface-2); padding: 1px 6px; border-radius: var(--radius-sm); }
 
 /* ---- Top bar ---- */
 .topbar {
@@ -48,7 +48,7 @@ code { font-family: var(--mono); font-size: 0.875em; background: var(--surface-2
   border-bottom: 1px solid var(--border);
 }
 .brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); }
-.brand-mark { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--text); color: #fff; }
+.brand-mark { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: var(--radius-sm); background: var(--accent); color: #fff; }
 .brand-mark svg { width: 18px; height: 18px; }
 .brand-name { font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
 .brand-tag { font-size: 12px; line-height: 16px; color: var(--text-2); }
@@ -153,7 +153,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease; }
 .assess-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 32px; }
 .assess-kicker { font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-2); margin-bottom: 8px; }
-.assess-card h3 { margin: 0 0 8px; font-size: 20px; line-height: 28px; letter-spacing: -0.01em; }
+.assess-card h3 { margin: 0 0 8px; font-size: 16px; line-height: 24px; font-weight: 600; }
 .assess-card p { color: var(--text-2); margin: 0 0 16px; }
 .assess-card p b, .assess-card li b { color: var(--text); }
 .assess-list { color: var(--text-2); line-height: 28px; margin: 0 0 24px; padding-left: 24px; }
@@ -163,7 +163,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .compare-danger { background: var(--critical-tint); }
 .compare-safe { background: var(--ok-tint); }
 .compare-head { font-size: 14px; font-weight: 600; color: var(--text-2); }
-.compare-big { font-size: 40px; line-height: 48px; font-weight: 700; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
+.compare-big { font-size: 32px; line-height: 40px; font-weight: 700; margin: 8px 0 0; font-variant-numeric: tabular-nums; }
 .compare-danger .compare-big { color: var(--critical); }
 .compare-safe .compare-big { color: var(--ok); }
 .compare-sub { font-size: 14px; color: var(--text-2); }
@@ -202,7 +202,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
   display: block; width: 100%; min-height: 200px; resize: vertical;
   background: var(--surface); color: var(--text);
   border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
-  font: inherit; font-size: 15px; line-height: 24px; padding: 12px 16px; outline: none;
+  font: inherit; font-size: 16px; line-height: 24px; padding: 12px 16px; outline: none;
 }
 .prompt-input::placeholder { color: #8F8A80; }
 .prompt-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
@@ -215,7 +215,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 /* Breach-check control: one line with a switch, one short sentence, details on demand */
 .breach-option { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 44px; }
-.switch-row label { font-size: 15px; line-height: 20px; font-weight: 600; cursor: pointer; }
+.switch-row label { font-size: 16px; line-height: 20px; font-weight: 600; cursor: pointer; }
 .switch {
   appearance: none; -webkit-appearance: none; margin: 0; flex: none; cursor: pointer;
   width: 40px; height: 24px; border-radius: 999px; background: var(--border-strong); position: relative; transition: background 0.15s;
@@ -256,7 +256,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 .finding { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-top: 1px solid var(--border); }
 .finding .badge { margin-top: 2px; min-width: 76px; justify-content: flex-start; }
 .finding-main { min-width: 0; flex: 1; }
-.finding-label { font-size: 15px; line-height: 24px; font-weight: 500; }
+.finding-label { font-size: 16px; line-height: 24px; font-weight: 500; }
 .finding-meta { font-size: 13px; line-height: 20px; color: var(--text-2); overflow-wrap: anywhere; }
 .finding-meta .masked { background: none; padding: 0; }
 .finding-breach { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 8px; font-size: 13px; line-height: 20px; }
