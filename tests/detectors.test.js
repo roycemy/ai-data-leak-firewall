@@ -79,3 +79,17 @@ test('redact removes every flagged value and keeps the rest of the text', () => 
 test('known gap: an SSN without dashes is not detected yet', { todo: 'only the dashed SSN form is matched' }, () => {
   assert.ok(ruleIds('ssn 123456789').length > 0);
 });
+
+test('a password is masked to its last two characters, without the keyword or full stop', () => {
+  const f = D.scan('my ' + 'password is hunter-x9.').findings.find(x => x.ruleId === 'credential-named');
+  assert.strictEqual(f.masked, '••••••••x9');
+  assert.strictEqual(f.label, 'Password in the message');
+  const code = D.scan('db_password = "Sup3rS3cretZq"').findings.find(x => x.ruleId === 'hardcoded-password');
+  assert.strictEqual(code.masked, '••••••••Zq');
+});
+
+test('display labels are plain words; saved ids stay the same', () => {
+  assert.deepStrictEqual(Object.keys(D.CATEGORIES), ['secrets', 'pii', 'financial', 'source', 'contract']);
+  assert.strictEqual(D.CATEGORIES.secrets.label, 'Passwords & keys');
+  assert.strictEqual(D.CATEGORIES.pii.label, 'Personal details');
+});

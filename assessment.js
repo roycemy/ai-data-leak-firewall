@@ -15,6 +15,10 @@
     iban: 'GB29 NWBK 6016 1331 9268 19'           // documented example IBAN
   };
 
+  // Same badge words as the Firewall: icon + word, not all caps.
+  var SEV_ICON = { critical: '◆', high: '▲', medium: '●', low: '○' };
+  function word(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
   var scenarios = [
     {
       id: 'support',
@@ -105,7 +109,7 @@
       '  <div class="compare-col compare-danger"><div class="compare-head">Without AI Firewall</div>' +
       '    <div class="compare-big">' + unprotected + '</div><div class="compare-sub">confidential item' + (unprotected === 1 ? '' : 's') + ' would reach the AI provider</div></div>' +
       '  <div class="compare-col compare-safe"><div class="compare-head">With AI Firewall</div>' +
-      '    <div class="compare-big">0</div><div class="compare-sub">leave the device — action: <b>' + res.action.toUpperCase() + '</b></div></div>' +
+      '    <div class="compare-big">0</div><div class="compare-sub">leave the device — action: <b>' + word(res.action) + '</b></div></div>' +
       '</div>' +
       '<div class="prompt-preview"><div class="prompt-preview-head">The prompt the employee tried to send (synthetic)</div><pre>' + escapeHTML(s.prompt) + '</pre></div>' +
       '<div class="findings">' + renderFindings(res.findings) + '</div>' +
@@ -131,7 +135,7 @@
       Object.keys(totals).forEach(function (c) { totals[c] += r.byCategory[c] || 0; });
     });
     var rows = state.results.map(function (r) {
-      return '<tr><td>' + r.title + '</td><td>' + r.findings + '</td><td><span class="action-tag action-' + r.action + '">' + r.action.toUpperCase() + '</span></td></tr>';
+      return '<tr><td>' + r.title + '</td><td>' + r.findings + '</td><td><span class="action-tag action-' + r.action + '"><span class="dot" aria-hidden="true"></span>' + word(r.action) + '</span></td></tr>';
     }).join('');
     var catLine = Object.keys(totals).filter(function (c) { return totals[c] > 0; }).map(function (c) {
       return '<span class="chip">' + window.DatoDetect.CATEGORIES[c].label + ': <b>' + totals[c] + '</b></span>';
@@ -157,7 +161,7 @@
       '</div></div>';
     el('assess-export').addEventListener('click', function () {
       var report = {
-        product: 'AI Firewall — AI data-leak firewall',
+        product: 'AI Firewall (formerly Dato)',
         type: 'Authorized synthetic assessment',
         company: FAKE.company,
         generatedAt: new Date().toISOString(),
@@ -186,7 +190,7 @@
     if (!findings.length) return '<div class="empty-state">No findings.</div>';
     var html = '';
     findings.forEach(function (f) {
-      html += '<div class="finding sev-' + f.severity + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
+      html += '<div class="finding sev-' + f.severity + '"><span class="sev"><span aria-hidden="true">' + SEV_ICON[f.severity] + '</span>' + word(f.severity) + '</span>' +
         '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code></div>';
     });
     return html;

@@ -6,11 +6,12 @@
   'use strict';
 
   var CATEGORIES = {
-    secrets:   { label: 'Secrets & Credentials', weight: 3 },
-    pii:       { label: 'Personal Data (PII)',   weight: 2 },
-    financial: { label: 'Financial Data',        weight: 2 },
-    source:    { label: 'Proprietary Source Code', weight: 2 },
-    contract:  { label: 'Contracts & Legal',     weight: 1 }
+    // label is what people see; the keys (secrets, pii, …) are what is saved and exported.
+    secrets:   { label: 'Passwords & keys',  weight: 3 },
+    pii:       { label: 'Personal details',  weight: 2 },
+    financial: { label: 'Financial data',    weight: 2 },
+    source:    { label: 'Source code',       weight: 2 },
+    contract:  { label: 'Contracts & legal', weight: 1 }
   };
 
   var SEVERITY_ORDER = { critical: 4, high: 3, medium: 2, low: 1 };
@@ -38,13 +39,13 @@
       pattern: /-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----/g },
     { id: 'db-connection-string', category: 'secrets', severity: 'critical', label: 'Database connection string',
       pattern: /\b(?:mongodb(?:\+srv)?|postgres(?:ql)?|mysql|redis|amqp):\/\/[^\s"'@:]+:[^\s"'@]+@[^\s"']+/gi },
-    { id: 'hardcoded-password', category: 'secrets', severity: 'high', label: 'Hardcoded password or secret assignment',
+    { id: 'hardcoded-password', category: 'secrets', severity: 'high', label: 'Password or key in code', maskValue: true,
       pattern: /(?:password|passwd|pwd|api[_-]?key|api[_-]?secret|secret[_-]?key|access[_-]?token|auth[_-]?token|client[_-]?secret)["'\s]*[:=]["'\s]*["'][^"'\s]{8,}["']/gi },
     { id: 'basic-auth-url', category: 'secrets', severity: 'high', label: 'Credentials in URL',
       pattern: /https?:\/\/[^/\s:@]+:[^/\s@]+@[^/\s]+/gi },
     // "my password is hunter2": a credential said in plain words. Ordinary sentences
     // like "the password is required" must not match, so the value is checked below.
-    { id: 'credential-named', category: 'secrets', severity: 'high', label: 'Credential stated in plain language',
+    { id: 'credential-named', category: 'secrets', severity: 'high', label: 'Password in the message', maskValue: true,
       detect: function (text) {
         var out = [];
         var re = /\b(?:password|passcode|passphrase|api[ _-]?key|secret[ _-]?key|access[ _-]?token|auth[ _-]?token|private[ _-]?key|pin)\s*(?:is|=|:)\s*([^\s,;]{3,})/gi, m;
@@ -52,7 +53,7 @@
           var value = m[1].replace(/[.!?]+$/, '');
           var isPlainWord = /^[A-Za-z]+$/.test(value);
           if (isPlainWord && (value.length < 6 || ORDINARY_WORDS.test(value))) continue;
-          out.push({ index: m.index, match: m[0] });
+          out.push({ index: m.index, match: m[0], value: value });
         }
         return out;
       } },
@@ -155,6 +156,17 @@
     return s.slice(0, 4) + '•'.repeat(Math.min(s.length - 8, 24)) + s.slice(-4);
   }
 
+  // A password is masked down to its last two characters, without the keyword
+  // in front of it or a full stop after it: "password is hunter-x9." -> "••••••••x9".
+  function maskPassword(match, value) {
+    if (!value) {
+      var quoted = /["']([^"'\s]+)["']\s*$/.exec(match);   // password = "…" in code
+      value = quoted ? quoted[1] : match;
+    }
+    value = value.replace(/[.,;!?]+$/, '');
+    return '••••••••' + value.slice(-2);
+  }
+
   /* scan(text, opts) -> { findings: [{ruleId, category, severity, label, index, match, masked, heuristic}] } */
   function scan(text) {
     var findings = [];
@@ -181,7 +193,7 @@
           label: rule.label,
           index: matches[i].index,
           length: matches[i].match.length,
-          masked: maskSnippet(matches[i].match),
+          masked: rule.maskValue ? maskPassword(matches[i].match, matches[i].value) : maskSnippet(matches[i].match),
           heuristic: false
         });
       }
