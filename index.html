@@ -109,25 +109,27 @@
   <!-- ACTIVITY -->
   <section id="view-activity" class="view">
     <div class="view-head">
-      <h1>Audit log</h1>
-      <p class="lede">Every inspection and policy decision, stored locally for security review. Export it for your SIEM or compliance evidence.</p>
+      <div>
+        <h1>Audit log</h1>
+        <p class="lede">Every inspection, simulated send and policy change in this browser. Export it as JSON for a security review.</p>
+      </div>
     </div>
-    <div class="panel">
-      <div class="panel-head">
-        <span class="panel-title">Events</span>
-        <span class="toolbar">
+    <div class="card">
+      <div class="card-head">
+        <h2 class="card-title">Events <span id="log-count" class="muted"></span></h2>
+        <div class="toolbar">
           <label for="activity-filter" class="sr-only">Show</label>
           <select id="activity-filter" class="select">
-            <option value="all">All actions</option>
+            <option value="all">All events</option>
             <option value="block">Blocked</option>
             <option value="warn">Warned</option>
             <option value="redact">Redacted</option>
             <option value="allowed-clean">Clean</option>
             <option value="breached">Password found in breaches</option>
           </select>
-          <button id="export-log" class="btn btn-ghost">Export JSON</button>
-          <button id="clear-log" class="btn btn-ghost danger">Clear</button>
-        </span>
+          <button id="export-log" class="btn btn-secondary">Export JSON</button>
+          <button id="clear-log" class="btn btn-quiet danger">Clear</button>
+        </div>
       </div>
       <div id="activity-list"></div>
     </div>

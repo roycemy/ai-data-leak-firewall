@@ -455,7 +455,9 @@
     }[cat];
   }
 
-  // ---------- Activity log ----------
+  // ---------- Audit log ----------
+  // A table on wide screens; below 720px the CSS stacks each row into a small card
+  // (each cell carries a data-label for that).
   function renderActivity() {
     var wrap = document.getElementById('activity-list');
     var filter = document.getElementById('activity-filter').value;
@@ -464,30 +466,34 @@
       if (filter === 'breached') return e.breached > 0;
       return e.action === filter;
     });
+    document.getElementById('log-count').textContent = events.length ? '· ' + list.length + ' of ' + events.length : '';
     if (!list.length) {
-      wrap.innerHTML = '<div class="empty-state">' + (filter === 'all'
-        ? 'No events yet. Scans, policy decisions, and simulated sends appear here for audit.'
-        : 'No events match this filter.') + '</div>';
+      wrap.innerHTML = filter === 'all'
+        ? emptyState('list', 'No events yet', 'Inspections, simulated sends and policy changes appear here for audit.')
+        : emptyState('list', 'No events match this filter', 'Choose another filter, or All events.');
       return;
     }
-    var html = '<div class="table-scroll"><table class="log-table"><thead><tr><th>Time</th><th>Source</th><th>Findings</th><th>Worst severity</th><th>Action</th><th>Breach check</th></tr></thead><tbody>';
+    var html = '<table class="log-table"><thead><tr><th>Time</th><th>Event</th><th>Severity</th><th>Outcome</th><th>Breach check</th></tr></thead><tbody>';
     list.forEach(function (e) {
-      var d = new Date(e.ts);
-      html += '<tr><td class="mono">' + d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'medium' }) + '</td><td>' + escapeHTML(e.source) + '</td>' +
-        '<td>' + (e.total || '—') + '</td><td><span class="sev sev-' + e.topSeverity + '">' + (e.total ? e.topSeverity.toUpperCase() : '—') + '</span></td>' +
-        '<td><span class="action-tag action-' + String(e.action).replace(/[^a-z-]/g, '') + '">' + escapeHTML(e.action) + '</span></td>' +
-        '<td>' + breachCell(e) + '</td></tr>';
+      var d = DB.describe(e, D.CATEGORIES);
+      var when = new Date(e.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      html += '<tr>' +
+        '<td class="log-time" data-label="Time"><time datetime="' + new Date(e.ts).toISOString() + '">' + when + '</time></td>' +
+        '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(d.title) + '</span><span class="log-source">' + escapeHTML(d.source) + '</span></td>' +
+        (DB.isScan(e) ? '<td data-label="Severity">' + (e.total ? sevBadge(e.topSeverity) : '<span class="muted">None</span>') + '</td>'
+                      : '<td data-label="Severity" class="log-na"><span class="muted">—</span></td>') +
+        '<td data-label="Outcome"><span class="badge ' + d.outcomeCls + '"><span class="dot" aria-hidden="true"></span>' + d.outcome + '</span></td>' +
+        (DB.isScan(e) ? '<td data-label="Breach check">' + breachCell(e) + '</td>'
+                      : '<td data-label="Breach check" class="log-na"><span class="muted">—</span></td>') + '</tr>';
     });
-    html += '</tbody></table></div>';
-    wrap.innerHTML = html;
+    wrap.innerHTML = html + '</tbody></table>';
   }
   // What the log shows for the breach check: counts only, never the password.
   function breachCell(e) {
-    if (e.breachError) return '<span class="muted">check failed</span>';
-    if (e.breachRan && !e.breachChecked) return '<span class="muted">no password</span>';
-    if (!e.breachChecked) return '—'; // the box was off
-    if (e.breached) return '<span class="breach-tag">' + e.breached + ' of ' + e.breachChecked + ' found</span>';
-    return '✓ 0 of ' + e.breachChecked;
+    var text = DB.breachText(e);
+    if (!text) return '<span class="muted">Off</span>';
+    if (e.breached) return '<span class="log-breach-bad">' + text + '</span>';
+    return '<span class="muted">' + text + '</span>';
   }
   document.getElementById('activity-filter').addEventListener('change', renderActivity);
   document.getElementById('export-log').addEventListener('click', function () {
