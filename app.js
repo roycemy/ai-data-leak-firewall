@@ -489,8 +489,9 @@
     setStat('stat-findings', findingsTotal);
     setStat('stat-blocked', blocked);
     setStat('stat-redacted', redacted);
-    // Total passwords confirmed breached, added up from each event's count.
-    setStat('stat-breached', events.reduce(function (s, e) { return s + (e.breached || 0); }, 0));
+    // How many inspections had at least one password found in breaches.
+    // (Counts inspections, not distinct passwords: re-inspecting the same prompt counts again.)
+    setStat('stat-breached', events.filter(function (e) { return e.breached > 0; }).length);
 
     // Category bars
     var byCat = {};

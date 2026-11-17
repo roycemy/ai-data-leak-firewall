@@ -19,7 +19,7 @@ AI Firewall (first called Dato; the repo and the Chrome extension still use that
 2. Tick **Also check detected passwords against known breaches** (it is off by default).
 3. Paste a prompt that contains a password, for example `my password is password123`, and press **Inspect locally**.
 4. Under the result you see "Checking…", then either a red "found in known breaches" note with the count or a green "Not found in known breaches" note.
-5. Open **Audit log** (filter: *Password found in breaches*) or **Risk dashboard** (*Confirmed breached passwords*) to see the count.
+5. Open **Audit log** (filter: *Password found in breaches*) or **Risk dashboard** (*Inspections with a breached password*) to see the count. The dashboard counts inspections, so inspecting the same prompt twice counts twice.
 
 **Every state** (from [PRD.md](PRD.md)): box off: no network call at all. Nothing to check: "No passwords found, so nothing was sent". Loading: "Checking N passwords…". Error (offline, network failure or a non-OK status such as 404, 429 or 503): an amber "Breach check unavailable" note, and the normal local scan, verdict and Send rule still work. Invalid input (nothing to inspect): the usual red message and no call. Edited while checking: the old answer is ignored. After Reset everything: the box is unticked and the count is 0.
 

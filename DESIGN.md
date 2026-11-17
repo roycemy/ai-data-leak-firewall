@@ -19,7 +19,7 @@ Cobalt is the brand and the primary action. It never means "safe": verdicts use 
 System sans for UI, monospace (`--mono`) for masked values, redacted text and timestamps. Body 16px, headings tight (-0.02em).
 
 ## Layout
-One column of content under a top bar. The console is two panels (input, result) that stack below 900px. Stats go 5 → 2 columns on narrow screens (the fifth card, "Confirmed breached", was added for Mini Project 3). Unchanged from the first version.
+One column of content under a top bar. The console is two panels (input, result) that stack below 900px. Stats go 5 → 2 columns on narrow screens (the fifth card, "Inspections with a breached password", was added for Mini Project 3). Unchanged from the first version.
 
 ## State styling
 - **Empty:** muted centred sentence that says what to do next.
