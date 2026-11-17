@@ -54,7 +54,7 @@ Click **View flagged activity** in the toolbar popup. Each time AI Firewall hold
 - **Redacted, then sent:** sent with the flagged values replaced
 - flags per day, findings by data type, and the recent flags, with a retention setting (7, 30 or 90 days), JSON export and a two-click Delete
 
-Before anything is flagged it shows zeros and "Nothing flagged yet". **Show demo data** fills it with generated examples under a banner that says so. The demo data is never saved. The website's Risk dashboard keeps its own separate log and is not shown here.
+Before anything is flagged it shows zeros and "Nothing flagged yet". **Show demo data** fills it with generated examples under a banner that says so. The demo data is never saved. The website's Dashboard keeps its own separate log and is not shown here. When you open the AI Firewall website (`roycemy.github.io/ai-data-leak-firewall/`), the small `bridge.js` content script hands that page a summary of this log, counts and labels only (never prompt text, matched values or rule details), so its Dashboard can show a "From the Chrome extension" card. It runs on no other page.
 
 ## Privacy and limits
 
