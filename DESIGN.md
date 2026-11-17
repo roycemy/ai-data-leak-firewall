@@ -54,9 +54,9 @@ System sans for all UI; monospace (`--mono`) only for masked values and redacted
 - **Charts:** hand-written inline SVG or CSS only. One series per colour, labelled axes, no legends that need decoding.
 
 ## Layout
-- Top bar: brand on the left and tabs on the right. On phones the tabs sit in one row that scrolls sideways, and the bar is not sticky.
+- Top bar: brand on the left and tabs on the right. On phones the six tabs sit in two even rows of three, so every tab is visible without scrolling, and the bar is not sticky.
 - Firewall: two cards, Prompt (input) and Result, side by side from 960px and stacked below that. The result has one verdict banner and then one row per finding. The breach result sits inside the password's row, not in a separate box.
-- Dashboard: 4 stat cards (2 × 2 on phones), then a trend card (full width), then Data types and Severity & outcomes side by side, then Recent activity and Policies in effect. A line under the title says the data comes from this browser only.
+- Dashboard: 4 stat cards (2 × 2 on phones), then a trend card (full width), then Data types and Severity & outcomes side by side, then Recent activity (last 5 events) and Policies in effect (each with a one-line description, so the two cards are about the same height). A line under the title says the data comes from this browser only. The trend shows 14 days; when there is activity on fewer than 3 days it shows 7 days and a one-line hint that activity will build up. No made-up data fills the gaps.
 - Audit log: a table on wide screens. Below 720px each event becomes a stacked card (outcome and time on top, event below, then severity and breach check), so nothing scrolls sideways.
 
 ## State styling
@@ -66,6 +66,7 @@ System sans for all UI; monospace (`--mono`) only for masked values and redacted
 - **Breach check:** a line inside the password's finding row: "Checking known breaches…" (spinner, removed when reduced motion is on), "Found in breaches · seen N times" (critical badge, and the row becomes Critical), "Not found in known breaches" (ok), or "Breach check unavailable" (high colour with ▲). A one-line summary under the findings says what was sent ("Sent: a 5-character hash prefix only.") and is the screen-reader status. "Nothing to check" appears only in that summary line.
 - **Destructive action armed:** the button turns red and reads "Click again to confirm" for 4 seconds.
 - **Edited after inspecting:** the result returns to its empty state with a sentence asking for a new inspection, and Send is hidden.
+- **Blocked:** no Send button at all; the verdict banner says it was blocked.
 - **After reset:** identical to the empty state.
 
 ## Motion
