@@ -134,39 +134,62 @@
   </section>
 
   <!-- DASHBOARD -->
-  <section id="view-dashboard" class="view">
+  <section id="view-dashboard" class="view" aria-labelledby="dash-title">
     <div class="view-head">
-      <h1>Risk dashboard</h1>
-      <p class="lede">What your AI usage would have leaked, and what your policies stopped.</p>
+      <div>
+        <h1 id="dash-title">Dashboard</h1>
+        <p class="lede">What AI Firewall caught and stopped in this browser.</p>
+      </div>
+      <p class="scope-note"><span class="dot"></span>This device only · built from this browser's local log</p>
     </div>
-    <p id="dash-empty" class="empty-state dash-empty" hidden>No data yet. Inspect a prompt on the Firewall tab and this dashboard fills in.</p>
     <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num" id="stat-scans">0</div><div class="stat-label">Inspections</div></div>
-      <div class="stat-card"><div class="stat-num" id="stat-findings">0</div><div class="stat-label">Findings caught</div></div>
-      <div class="stat-card stat-block"><div class="stat-num" id="stat-blocked">0</div><div class="stat-label">Blocked sends</div></div>
-      <div class="stat-card stat-redact"><div class="stat-num" id="stat-redacted">0</div><div class="stat-label">Redactions</div></div>
-      <div class="stat-card stat-block"><div class="stat-num" id="stat-breached">0</div><div class="stat-label">Inspections with a breached password</div></div>
+      <div class="card stat-card"><p class="caption">Inspections</p><p class="stat-num num" id="stat-scans">0</p><p class="stat-sub" id="stat-scans-sub"></p></div>
+      <div class="card stat-card"><p class="caption">Flagged</p><p class="stat-num num" id="stat-flagged">0</p><p class="stat-sub" id="stat-flagged-sub"></p></div>
+      <div class="card stat-card"><p class="caption">Blocked</p><p class="stat-num num" id="stat-blocked">0</p><p class="stat-sub" id="stat-blocked-sub"></p></div>
+      <div class="card stat-card"><p class="caption">Breached passwords</p><p class="stat-num num" id="stat-breached">0</p><p class="stat-sub" id="stat-breached-sub"></p></div>
     </div>
-    <div class="dash-grid">
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Findings by data class</span></div>
-        <div id="cat-bars" class="bars"></div>
+
+    <div id="dash-empty" class="card dash-empty" hidden>
+      <div class="empty">
+        <span class="empty-icon"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16M7 16v-5M12 16V7M17 16v-8"/></svg></span>
+        <p class="empty-title">No activity yet</p>
+        <p class="empty-text">Inspect a prompt on the Firewall tab. Trends, data types and recent activity from this browser appear here.</p>
+        <a href="#firewall" id="dash-goto-firewall" class="btn btn-primary">Go to Firewall</a>
       </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Policy outcomes</span></div>
-        <div class="donut-wrap">
-          <div id="action-donut" class="donut"></div>
-          <div id="donut-legend" class="legend"></div>
+    </div>
+
+    <div id="dash-content">
+      <section class="card" aria-labelledby="trend-title">
+        <div class="card-head">
+          <h2 class="card-title" id="trend-title">Activity</h2>
+          <p class="legend-inline"><span class="key key-all"></span>Inspections <span class="key key-flag"></span>Flagged <span class="muted">· last 14 days</span></p>
         </div>
+        <div id="trend"></div>
+      </section>
+      <div class="dash-grid">
+        <section class="card" aria-labelledby="types-title">
+          <div class="card-head"><h2 class="card-title" id="types-title">Data types found</h2></div>
+          <div id="cat-bars"></div>
+        </section>
+        <section class="card" aria-labelledby="sev-title">
+          <div class="card-head"><h2 class="card-title" id="sev-title">Severity and outcomes</h2></div>
+          <p class="caption">Worst finding per inspection</p>
+          <div id="sev-stack"></div>
+          <ul id="sev-legend" class="legend-list"></ul>
+          <p class="caption section-gap">What the policy did</p>
+          <div id="outcome-stack"></div>
+          <ul id="outcome-legend" class="legend-list"></ul>
+        </section>
       </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Last 7 days</span></div>
-        <div id="week-bars" class="week-bars"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Current posture</span></div>
-        <div id="posture-line" class="posture"></div>
-        <p class="posture-note">Adjust per-class enforcement in <a href="#policies" id="goto-policies">Policies</a>.</p>
+      <div class="dash-grid">
+        <section class="card" aria-labelledby="recent-title">
+          <div class="card-head"><h2 class="card-title" id="recent-title">Recent activity</h2><a href="#activity" id="goto-activity" class="link-quiet">View audit log</a></div>
+          <ul id="recent" class="recent-list"></ul>
+        </section>
+        <section class="card" aria-labelledby="posture-title">
+          <div class="card-head"><h2 class="card-title" id="posture-title">Policies in effect</h2><a href="#policies" id="goto-policies" class="link-quiet">Edit</a></div>
+          <ul id="posture-line" class="posture-list"></ul>
+        </section>
       </div>
     </div>
   </section>
@@ -221,6 +244,7 @@ Test card: 4111 1111 1111 1111</pre>
 
 <script src="detectors.js"></script>
 <script src="breach-check.js"></script>
+<script src="dashboard.js"></script>
 <script src="app.js"></script>
 <script src="assessment.js"></script>
 </body>

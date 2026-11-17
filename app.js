@@ -520,82 +520,84 @@
   });
 
   // ---------- Dashboard ----------
+  // The numbers and charts come from dashboard.js (pure functions over `events`).
+  var DB = window.DatoDashboard;
+
+  // Reads: events, policies. Changes: the Dashboard view only.
   function renderDashboard() {
-    var scans = events.filter(function (e) { return ['allow', 'warn', 'redact', 'block', 'allowed-clean'].indexOf(e.action) !== -1; });
-    var blocked = events.filter(function (e) { return e.action === 'block'; }).length;
-    var warned = events.filter(function (e) { return e.action === 'warn'; }).length;
-    var redacted = events.filter(function (e) { return e.action === 'redact'; }).length;
-    var clean = events.filter(function (e) { return e.action === 'allowed-clean' || e.action === 'allow'; }).length;
-    var findingsTotal = events.reduce(function (s, e) { return s + (e.total || 0); }, 0);
-    document.getElementById('dash-empty').hidden = events.length > 0;
-    setStat('stat-scans', scans.length);
-    setStat('stat-findings', findingsTotal);
-    setStat('stat-blocked', blocked);
-    setStat('stat-redacted', redacted);
-    // How many inspections had at least one password found in breaches.
-    // (Counts inspections, not distinct passwords: re-inspecting the same prompt counts again.)
-    setStat('stat-breached', events.filter(function (e) { return e.breached > 0; }).length);
+    var cats = Object.keys(D.CATEGORIES);
+    var s = DB.summarize(events, cats);
+    var empty = s.inspections === 0;
 
-    // Category bars
-    var byCat = {};
-    Object.keys(D.CATEGORIES).forEach(function (c) { byCat[c] = 0; });
-    events.forEach(function (e) {
-      if (!e.byCategory) return;
-      Object.keys(byCat).forEach(function (c) { byCat[c] += e.byCategory[c] || 0; });
-    });
-    var max = Math.max(1, Math.max.apply(null, Object.keys(byCat).map(function (c) { return byCat[c]; })));
-    var bars = '';
-    Object.keys(D.CATEGORIES).forEach(function (c) {
-      bars += '<div class="bar-row"><span class="bar-label"><span class="cat-dot cat-' + c + '"></span>' + D.CATEGORIES[c].label + '</span>' +
-        '<span class="bar-track"><span class="bar-fill cat-bg-' + c + '" style="width:' + Math.round(byCat[c] / max * 100) + '%"></span></span>' +
-        '<span class="bar-num">' + byCat[c] + '</span></div>';
-    });
-    document.getElementById('cat-bars').innerHTML = bars;
+    // Stat cards: a number and one line of context each.
+    setStat('stat-scans', s.inspections, empty ? 'Nothing inspected yet' : plural(s.findings, 'finding') + ' caught');
+    setStat('stat-flagged', s.flagged, empty ? 'With confidential data' : Math.round(s.flagged / s.inspections * 100) + '% of inspections');
+    setStat('stat-blocked', s.blocked, 'Stopped before sending');
+    setStat('stat-breached', s.breachedInspections, 'Inspections with a breached password');
+    document.getElementById('view-dashboard').classList.toggle('is-empty', empty);
+    document.getElementById('dash-empty').hidden = !empty;
+    document.getElementById('dash-content').hidden = empty;
+    if (empty) return;
 
-    // Action donut (pure CSS conic-gradient)
-    var total = Math.max(1, blocked + warned + redacted + clean);
-    var pB = blocked / total * 100, pW = warned / total * 100, pR = redacted / total * 100;
-    var donut = document.getElementById('action-donut');
-    donut.style.background = 'conic-gradient(' +
-      '#A3231B 0 ' + pB + '%,' +
-      '#C98A12 ' + pB + '% ' + (pB + pW) + '%,' +
-      '#2F5BFF ' + (pB + pW) + '% ' + (pB + pW + pR) + '%,' +
-      '#1E6B3A ' + (pB + pW + pR) + '% 100%)';
-    document.getElementById('donut-legend').innerHTML =
-      legendDot('#A3231B', 'Blocked', blocked) + legendDot('#C98A12', 'Warned', warned) +
-      legendDot('#2F5BFF', 'Redacted', redacted) + legendDot('#1E6B3A', 'Clean', clean);
+    // Activity over the last 14 days.
+    document.getElementById('trend').innerHTML = DB.trendChart(DB.dailyTrend(events, 14, Date.now()));
 
-    // 7-day activity
-    var days = [];
-    for (var i = 6; i >= 0; i--) {
-      var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
-      days.push({ label: d.toLocaleDateString(undefined, { weekday: 'short' }), start: d.getTime(), count: 0 });
-    }
-    scans.forEach(function (e) {
-      for (var i = 0; i < days.length; i++) {
-        if (e.ts >= days[i].start && e.ts < days[i].start + 86400000) { days[i].count++; break; }
-      }
-    });
-    var dmax = Math.max(1, Math.max.apply(null, days.map(function (d) { return d.count; })));
-    document.getElementById('week-bars').innerHTML = days.map(function (d) {
-      return '<div class="day-col"><div class="day-bar" style="height:' + Math.round(d.count / dmax * 100) + '%" title="' + d.count + ' events"></div><div class="day-label">' + d.label + '</div></div>';
+    // Data types, most found first.
+    var typeRows = cats.map(function (c) { return { label: D.CATEGORIES[c].label, value: s.byCategory[c] }; })
+      .sort(function (a, b) { return b.value - a.value; });
+    document.getElementById('cat-bars').innerHTML = s.findings
+      ? DB.bars(typeRows, s.findings)
+      : '<p class="card-caption">No confidential data found yet.</p>';
+
+    // Severity (worst finding per flagged inspection) and policy outcomes.
+    document.getElementById('sev-stack').innerHTML = DB.stacked(DB.SEVERITIES.map(function (v) {
+      return { value: s.bySeverity[v], cls: 'seg-' + v };
+    }));
+    document.getElementById('sev-legend').innerHTML = DB.SEVERITIES.map(function (v) {
+      return '<li>' + sevBadge(v) + '<span class="num">' + s.bySeverity[v] + '</span></li>';
+    }).join('');
+    var outcomes = [
+      { word: 'Blocked', value: s.blocked, cls: 'seg-critical', badge: 'badge-critical' },
+      { word: 'Warned', value: s.warned, cls: 'seg-high', badge: 'badge-high' },
+      { word: 'Redacted', value: s.redacted, cls: 'seg-info', badge: 'badge-info' },
+      { word: 'Clean', value: s.clean, cls: 'seg-ok', badge: 'badge-ok' }
+    ];
+    document.getElementById('outcome-stack').innerHTML = DB.stacked(outcomes);
+    document.getElementById('outcome-legend').innerHTML = outcomes.map(function (o) {
+      return '<li><span class="badge ' + o.badge + '"><span class="dot"></span>' + o.word + '</span><span class="num">' + o.value + '</span></li>';
     }).join('');
 
-    // Posture
-    var posture = Object.keys(D.CATEGORIES).map(function (c) {
-      return '<span class="policy-tag policy-' + policies[c] + '">' + D.CATEGORIES[c].label.split(' ')[0] + ': ' + ACTION_LABEL[policies[c]] + '</span>';
-    }).join(' ');
-    document.getElementById('posture-line').innerHTML = posture;
+    // Recent activity: the last 6 events, newest first.
+    var now = Date.now();
+    document.getElementById('recent').innerHTML = events.slice(-6).reverse().map(function (e) {
+      var d = DB.describe(e, D.CATEGORIES);
+      var breach = DB.breachText(e);
+      return '<li class="recent-row"><span class="badge ' + d.outcomeCls + '"><span class="dot"></span>' + d.outcome + '</span>' +
+        '<div class="recent-main"><p class="recent-title">' + escapeHTML(d.title) + '</p>' +
+        '<p class="recent-meta">' + d.source + (breach ? ' · ' + breach : '') + '</p></div>' +
+        '<time class="recent-time" datetime="' + new Date(e.ts).toISOString() + '">' + DB.timeAgo(e.ts, now) + '</time></li>';
+    }).join('');
+
+    // Policies in effect.
+    document.getElementById('posture-line').innerHTML = cats.map(function (c) {
+      return '<li><span>' + D.CATEGORIES[c].label + '</span><span class="badge policy-' + policies[c] + '">' + ACTION_LABEL[policies[c]] + '</span></li>';
+    }).join('');
   }
-  function setStat(id, v) { document.getElementById(id).textContent = v; }
-  function legendDot(color, label, n) {
-    return '<span class="legend-item"><span class="legend-dot" style="background:' + color + '"></span>' + label + ' <b>' + n + '</b></span>';
+  // A stat card: the number and its one-line caption.
+  function setStat(id, value, sub) {
+    document.getElementById(id).textContent = value;
+    document.getElementById(id + '-sub').textContent = sub;
   }
 
   var firewallLink = document.getElementById('goto-firewall');
   firewallLink.addEventListener('click', function (e) { e.preventDefault(); showView('firewall'); });
 
   document.getElementById('goto-install').addEventListener('click', function (e) { e.preventDefault(); showView('install'); });
+
+  ['dash-goto-firewall', 'goto-activity'].forEach(function (id) {
+    var link = document.getElementById(id);
+    link.addEventListener('click', function (e) { e.preventDefault(); showView(link.getAttribute('href').slice(1)); });
+  });
 
   var policiesLink = document.getElementById('goto-policies');
   policiesLink.addEventListener('click', function (e) { e.preventDefault(); showView('policies'); });
