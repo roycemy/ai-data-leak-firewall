@@ -414,21 +414,30 @@
     var filter = document.getElementById('activity-filter').value;
     var list = events.slice().reverse().filter(function (e) {
       if (filter === 'all') return true;
+      if (filter === 'breached') return e.breached > 0;
       return e.action === filter;
     });
     if (!list.length) {
       wrap.innerHTML = '<div class="empty-state">No events yet. Scans, policy decisions, and simulated sends appear here for audit.</div>';
       return;
     }
-    var html = '<div class="table-scroll"><table class="log-table"><thead><tr><th>Time</th><th>Source</th><th>Findings</th><th>Worst severity</th><th>Action</th></tr></thead><tbody>';
+    var html = '<div class="table-scroll"><table class="log-table"><thead><tr><th>Time</th><th>Source</th><th>Findings</th><th>Worst severity</th><th>Action</th><th>Breach check</th></tr></thead><tbody>';
     list.forEach(function (e) {
       var d = new Date(e.ts);
       html += '<tr><td class="mono">' + d.toLocaleString() + '</td><td>' + escapeHTML(e.source) + '</td>' +
         '<td>' + (e.total || '—') + '</td><td><span class="sev sev-' + e.topSeverity + '">' + (e.total ? e.topSeverity.toUpperCase() : '—') + '</span></td>' +
-        '<td><span class="action-tag action-' + String(e.action).replace(/[^a-z-]/g, '') + '">' + escapeHTML(e.action) + '</span></td></tr>';
+        '<td><span class="action-tag action-' + String(e.action).replace(/[^a-z-]/g, '') + '">' + escapeHTML(e.action) + '</span></td>' +
+        '<td>' + breachCell(e) + '</td></tr>';
     });
     html += '</tbody></table></div>';
     wrap.innerHTML = html;
+  }
+  // What the log shows for the breach check: counts only, never the password.
+  function breachCell(e) {
+    if (e.breachError) return '<span class="muted">unavailable</span>';
+    if (!e.breachChecked) return '—';
+    if (e.breached) return '<span class="breach-tag">' + e.breached + ' of ' + e.breachChecked + ' breached</span>';
+    return '✓ 0 of ' + e.breachChecked;
   }
   document.getElementById('activity-filter').addEventListener('change', renderActivity);
   document.getElementById('export-log').addEventListener('click', function () {
@@ -473,6 +482,8 @@
     setStat('stat-findings', findingsTotal);
     setStat('stat-blocked', blocked);
     setStat('stat-redacted', redacted);
+    // Total passwords confirmed breached, added up from each event's count.
+    setStat('stat-breached', events.reduce(function (s, e) { return s + (e.breached || 0); }, 0));
 
     // Category bars
     var byCat = {};

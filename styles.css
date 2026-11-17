@@ -186,7 +186,8 @@ a { color: var(--cobalt); }
 .select { font: inherit; font-size: 14px; background: #fff; color: var(--text); border: 1px solid var(--line-strong); border-radius: 9px; padding: 8px 10px; }
 
 /* Dashboard */
-.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px; }
+@media (max-width: 1000px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 800px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
 .stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
 .stat-num { font-size: 30px; font-weight: 750; letter-spacing: -0.02em; }
@@ -329,3 +330,4 @@ code { font-family: var(--mono); font-size: 0.9em; background: var(--panel-2); p
 .breach-good { background: var(--green-bg); border-color: var(--green-line); color: var(--green); }
 .breach-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 5px; background: var(--red); color: #fff; }
 @media (prefers-reduced-motion: reduce) { .breach-loading::before { border-top-color: var(--line-strong); } }
+.muted { color: var(--muted); }

@@ -103,12 +103,14 @@
       <div class="panel-head">
         <span class="panel-title">Events</span>
         <span class="toolbar">
+          <label for="activity-filter" class="sr-only">Show</label>
           <select id="activity-filter" class="select">
             <option value="all">All actions</option>
             <option value="block">Blocked</option>
             <option value="warn">Warned</option>
             <option value="redact">Redacted</option>
             <option value="allowed-clean">Clean</option>
+            <option value="breached">Confirmed breached</option>
           </select>
           <button id="export-log" class="btn btn-ghost">Export JSON</button>
           <button id="clear-log" class="btn btn-ghost danger">Clear</button>
@@ -130,6 +132,7 @@
       <div class="stat-card"><div class="stat-num" id="stat-findings">0</div><div class="stat-label">Findings caught</div></div>
       <div class="stat-card stat-block"><div class="stat-num" id="stat-blocked">0</div><div class="stat-label">Blocked sends</div></div>
       <div class="stat-card stat-redact"><div class="stat-num" id="stat-redacted">0</div><div class="stat-label">Redactions</div></div>
+      <div class="stat-card stat-block"><div class="stat-num" id="stat-breached">0</div><div class="stat-label">Confirmed breached passwords</div></div>
     </div>
     <div class="dash-grid">
       <div class="panel">
