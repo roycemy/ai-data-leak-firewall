@@ -15,6 +15,10 @@
     iban: 'GB29 NWBK 6016 1331 9268 19'           // documented example IBAN
   };
 
+  // Same badge words as the Firewall: icon + word, not all caps.
+  var SEV_ICON = { critical: '◆', high: '▲', medium: '●', low: '○' };
+  function word(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
   var scenarios = [
     {
       id: 'support',
@@ -78,7 +82,7 @@
       '<div class="assess-kicker">Authorized demo · synthetic data only</div>' +
       '<h3>AI data-leak assessment</h3>' +
       '<p>This simulation shows what happens when employees at <b>' + FAKE.company + '</b> paste everyday work into an AI assistant, ' +
-      'first without protection and then behind Dato. Every secret, person, and number is fabricated for this demo. Nothing is sent anywhere — every scan runs locally in this browser.</p>' +
+      'first without protection and then behind AI Firewall. Every secret, person, and number is fabricated for this demo. Nothing is sent anywhere — every scan runs locally in this browser.</p>' +
       '<ul class="assess-list">' +
       '<li>4 realistic workplace scenarios</li>' +
       '<li>Clearly fake credentials and identities</li>' +
@@ -102,10 +106,10 @@
       '<h3>' + s.title + '</h3>' +
       '<p class="assess-task">' + s.task + '</p>' +
       '<div class="compare">' +
-      '  <div class="compare-col compare-danger"><div class="compare-head">Without Dato</div>' +
+      '  <div class="compare-col compare-danger"><div class="compare-head">Without AI Firewall</div>' +
       '    <div class="compare-big">' + unprotected + '</div><div class="compare-sub">confidential item' + (unprotected === 1 ? '' : 's') + ' would reach the AI provider</div></div>' +
-      '  <div class="compare-col compare-safe"><div class="compare-head">With Dato</div>' +
-      '    <div class="compare-big">0</div><div class="compare-sub">leave the device — action: <b>' + res.action.toUpperCase() + '</b></div></div>' +
+      '  <div class="compare-col compare-safe"><div class="compare-head">With AI Firewall</div>' +
+      '    <div class="compare-big">0</div><div class="compare-sub">leave the device — action: <b>' + word(res.action) + '</b></div></div>' +
       '</div>' +
       '<div class="prompt-preview"><div class="prompt-preview-head">The prompt the employee tried to send (synthetic)</div><pre>' + escapeHTML(s.prompt) + '</pre></div>' +
       '<div class="findings">' + renderFindings(res.findings) + '</div>' +
@@ -131,7 +135,7 @@
       Object.keys(totals).forEach(function (c) { totals[c] += r.byCategory[c] || 0; });
     });
     var rows = state.results.map(function (r) {
-      return '<tr><td>' + r.title + '</td><td>' + r.findings + '</td><td><span class="action-tag action-' + r.action + '">' + r.action.toUpperCase() + '</span></td></tr>';
+      return '<tr><td>' + r.title + '</td><td>' + r.findings + '</td><td><span class="action-tag action-' + r.action + '"><span class="dot" aria-hidden="true"></span>' + word(r.action) + '</span></td></tr>';
     }).join('');
     var catLine = Object.keys(totals).filter(function (c) { return totals[c] > 0; }).map(function (c) {
       return '<span class="chip">' + window.DatoDetect.CATEGORIES[c].label + ': <b>' + totals[c] + '</b></span>';
@@ -141,7 +145,7 @@
       '<div class="assess-kicker">Assessment report · ' + FAKE.company + '</div>' +
       '<h3>' + totalFindings + ' confidential items stopped before reaching an AI tool</h3>' +
       '<p>Across ' + scenarios.length + ' everyday tasks, an unprotected workflow would have exposed <b>' + totalFindings +
-      '</b> pieces of synthetic confidential data. Dato caught every one locally, before anything left the browser.</p>' +
+      '</b> pieces of synthetic confidential data. AI Firewall caught every one locally, before anything left the browser.</p>' +
       '<div class="chips">' + catLine + '</div>' +
       '<table class="log-table"><thead><tr><th>Scenario</th><th>Items caught</th><th>Policy action</th></tr></thead><tbody>' + rows + '</tbody></table>' +
       '<div class="recommendations"><div class="rec-head">Recommended rollout</div>' +
@@ -157,7 +161,7 @@
       '</div></div>';
     el('assess-export').addEventListener('click', function () {
       var report = {
-        product: 'Dato — AI data-leak firewall',
+        product: 'AI Firewall (formerly Dato)',
         type: 'Authorized synthetic assessment',
         company: FAKE.company,
         generatedAt: new Date().toISOString(),
@@ -186,7 +190,7 @@
     if (!findings.length) return '<div class="empty-state">No findings.</div>';
     var html = '';
     findings.forEach(function (f) {
-      html += '<div class="finding sev-' + f.severity + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
+      html += '<div class="finding sev-' + f.severity + '"><span class="sev"><span aria-hidden="true">' + SEV_ICON[f.severity] + '</span>' + word(f.severity) + '</span>' +
         '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code></div>';
     });
     return html;
