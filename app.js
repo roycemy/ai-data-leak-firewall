@@ -426,7 +426,9 @@
       return e.action === filter;
     });
     if (!list.length) {
-      wrap.innerHTML = '<div class="empty-state">No events yet. Scans, policy decisions, and simulated sends appear here for audit.</div>';
+      wrap.innerHTML = '<div class="empty-state">' + (filter === 'all'
+        ? 'No events yet. Scans, policy decisions, and simulated sends appear here for audit.'
+        : 'No events match this filter.') + '</div>';
       return;
     }
     var html = '<div class="table-scroll"><table class="log-table"><thead><tr><th>Time</th><th>Source</th><th>Findings</th><th>Worst severity</th><th>Action</th><th>Breach check</th></tr></thead><tbody>';
