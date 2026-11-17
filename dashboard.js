@@ -61,6 +61,11 @@
     return out;
   }
 
+  /* activeDays(days) -> how many of these days had at least one inspection */
+  function activeDays(days) {
+    return days.filter(function (d) { return d.inspections > 0; }).length;
+  }
+
   /* trendChart(days) -> HTML: an inline SVG bar chart plus its labels.
    * Each day is one bar: the full bar is all inspections, the dark part is the
    * ones that were flagged. The SVG uses a simple 0–100 coordinate system. */
@@ -163,6 +168,7 @@
   global.DatoDashboard = {
     SEVERITIES: SEVERITIES,
     isScan: isScan,
+    activeDays: activeDays,
     summarize: summarize,
     dailyTrend: dailyTrend,
     trendChart: trendChart,

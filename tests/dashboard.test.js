@@ -78,3 +78,8 @@ test('timeAgo is short and readable', () => {
   assert.strictEqual(DB.timeAgo(NOW - 3 * 3600000, NOW), '3 h ago');
   assert.strictEqual(DB.timeAgo(NOW - 2 * DAY, NOW), '2 d ago');
 });
+
+test('activeDays counts days with at least one inspection (the dashboard shows 7 days when it is under 3)', () => {
+  assert.strictEqual(DB.activeDays(DB.dailyTrend(EVENTS, 14, NOW)), 2);
+  assert.strictEqual(DB.activeDays(DB.dailyTrend([], 14, NOW)), 0);
+});
