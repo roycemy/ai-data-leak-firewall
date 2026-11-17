@@ -35,6 +35,7 @@ API: Have I Been Pwned, Pwned Passwords range endpoint, https://haveibeenpwned.c
 4. If `response.ok` is false (for example 404, 429 or 503), that is an error, not a result.
 5. The answer is plain text, one `SUFFIX:COUNT` line per hash that starts with those 5 characters. The page looks for the line whose suffix equals the other 35 characters. Its count is how many times the password appears in breaches; no line means 0.
 6. The password and full hash stay in memory only for the check and are never saved or shown.
+7. Every result note (found, not found, error) ends by saying what left the browser: "Sent: a 5-character hash prefix only." ("Sent at most" for an error), because the panel's badge says "on-device".
 
 ## Interactions
 1. Buttons: Inspect, Send (only after Inspect, and only until the text changes), Clear, policy toggles, Clear log, Export, Reset everything.

@@ -290,6 +290,9 @@
     else document.getElementById('scan-result').appendChild(note);
   }
 
+  // Every breach result says what left the browser (the panel's badge says "on-device").
+  var SENT_NOTE = '<span class="muted"> Sent: a 5-character hash prefix only.</span>';
+
   function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 
   // Reads: breachBox, breachRunId. Changes: the findings' severity, the event's
@@ -313,7 +316,8 @@
     if (outcome.error) {
       event.breachError = true; saveEvents();
       showBreachNote('error', '<b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
-        '. The local scan above still applies.');
+        '. The local scan above still applies.' +
+        '<span class="muted"> Sent at most: a 5-character hash prefix.</span>');
       return;
     }
 
@@ -337,10 +341,10 @@
           r.count.toLocaleString() + '</b> times in known breaches</li>';
       }).join('');
       showBreachNote('bad', '⛔ <b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
-        ' found in known breaches.</b> Attackers try these first. Change it everywhere it is used.<ul>' + items + '</ul>');
+        ' found in known breaches.</b> Attackers try these first. Change it everywhere it is used.' + SENT_NOTE + '<ul>' + items + '</ul>');
     } else {
       showBreachNote('good', '✓ <b>Not found in known breaches</b> (' + plural(outcome.checked, 'password') +
-        ' checked). That does not make it safe to paste into an AI tool.');
+        ' checked). That does not make it safe to paste into an AI tool.' + SENT_NOTE);
     }
   }
 
