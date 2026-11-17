@@ -490,7 +490,7 @@
       html += '<tr>' +
         '<td class="log-time" data-label="Time"><time datetime="' + new Date(e.ts).toISOString() + '">' + when + '</time></td>' +
         '<td class="log-event" data-label="Event"><span class="log-title">' + escapeHTML(d.title) + '</span><span class="log-source">' + escapeHTML(d.source) + '</span></td>' +
-        (DB.isScan(e) ? '<td data-label="Severity">' + (e.total ? sevBadge(e.topSeverity) : '<span class="muted">None</span>') + '</td>'
+        (DB.isScan(e) ? '<td data-label="Severity">' + (e.total ? sevBadge(e.topSeverity) : '<span class="muted">—</span>') + '</td>'
                       : '<td data-label="Severity" class="log-na"><span class="muted">—</span></td>') +
         '<td data-label="Outcome"><span class="badge ' + d.outcomeCls + '"><span class="dot" aria-hidden="true"></span>' + d.outcome + '</span></td>' +
         (DB.isScan(e) ? '<td data-label="Breach check">' + breachCell(e) + '</td>'
@@ -501,7 +501,7 @@
   // What the log shows for the breach check: counts only, never the password.
   function breachCell(e) {
     var text = DB.breachText(e);
-    if (!text) return '<span class="muted">Off</span>';
+    if (!text) return '<span class="muted">—</span>'; // the check was off
     if (e.breached) return '<span class="log-breach-bad">' + text + '</span>';
     return '<span class="muted">' + text + '</span>';
   }
