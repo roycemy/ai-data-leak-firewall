@@ -280,8 +280,9 @@
       });
     }
 
-    // 4. The Send button matches the verdict (Block keeps it disabled).
-    document.getElementById('result-actions').hidden = false;
+    // 4. The Send button matches the verdict. On Block there is no Send at all:
+    //    the verdict banner already says it was blocked.
+    document.getElementById('result-actions').hidden = key === 'block';
     sendBtn.textContent = v.send;
     sendBtn.disabled = key === 'block';
     sendBtn.dataset.mode = key === 'redact' ? 'redacted' : 'send';
@@ -545,8 +546,15 @@
     document.getElementById('dash-content').hidden = empty;
     if (empty) return;
 
-    // Activity over the last 14 days.
-    document.getElementById('trend').innerHTML = DB.trendChart(DB.dailyTrend(events, 14, Date.now()));
+    // Activity over the last 14 days. With activity on fewer than 3 days, a 14-day chart
+    // is mostly empty, so show the last 7 days and say the chart fills in over time.
+    var days = DB.dailyTrend(events, 14, Date.now());
+    var young = DB.activeDays(days) < 3;
+    if (young) days = days.slice(-7);
+    document.getElementById('trend-range').textContent = '· last ' + days.length + ' days';
+    document.getElementById('trend').innerHTML = DB.trendChart(days) + (young
+      ? '<p class="trend-hint">Activity will build up over the next few days. Each bar is one day of inspections in this browser.</p>'
+      : '');
 
     // Data types, most found first.
     var typeRows = cats.map(function (c) { return { label: D.CATEGORIES[c].label, value: s.byCategory[c] }; })
@@ -575,7 +583,7 @@
 
     // Recent activity: the last 6 events, newest first.
     var now = Date.now();
-    document.getElementById('recent').innerHTML = events.slice(-6).reverse().map(function (e) {
+    document.getElementById('recent').innerHTML = events.slice(-5).reverse().map(function (e) {
       var d = DB.describe(e, D.CATEGORIES);
       var breach = DB.breachText(e);
       return '<li class="recent-row"><span class="badge ' + d.outcomeCls + '"><span class="dot"></span>' + d.outcome + '</span>' +
@@ -584,9 +592,10 @@
         '<time class="recent-time" datetime="' + new Date(e.ts).toISOString() + '">' + DB.timeAgo(e.ts, now) + '</time></li>';
     }).join('');
 
-    // Policies in effect.
+    // Policies in effect, each with what it covers (two lines, like the recent-activity rows).
     document.getElementById('posture-line').innerHTML = cats.map(function (c) {
-      return '<li><span>' + D.CATEGORIES[c].label + '</span><span class="badge policy-' + policies[c] + '">' + ACTION_LABEL[policies[c]] + '</span></li>';
+      return '<li><div><p class="recent-title">' + D.CATEGORIES[c].label + '</p><p class="recent-meta">' + policyDescription(c) + '</p></div>' +
+        '<span class="badge policy-' + policies[c] + '">' + ACTION_LABEL[policies[c]] + '</span></li>';
     }).join('');
   }
   // A stat card: the number and its one-line caption.
