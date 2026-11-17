@@ -33,17 +33,19 @@
 <main class="main" id="main" tabindex="-1">
 
   <!-- FIREWALL -->
-  <section id="view-firewall" class="view active">
+  <section id="view-firewall" class="view active" aria-labelledby="firewall-title">
     <div class="view-head">
-      <h1>Inspect it before the model sees it.</h1>
-      <p class="lede">Paste a prompt or attach files. AI Firewall detects secrets, PII, financials, source code, and contract language on-device — then warns, redacts, or blocks according to your policy.</p>
-      <p class="posture-note">Want these checks inside ChatGPT, Claude, and Gemini? <a href="#install" id="goto-install">Get the Chrome extension</a>.</p>
+      <div>
+        <h1 id="firewall-title">Check a prompt before it reaches AI</h1>
+        <p class="lede">Paste what you are about to send to ChatGPT, Claude or Gemini. AI Firewall checks it on this device and applies your policy.</p>
+      </div>
     </div>
     <div class="console-grid">
-      <div class="panel">
-        <div class="panel-head">
-          <span class="panel-title">Prompt &amp; files</span>
-          <label class="btn btn-ghost">
+      <section class="card prompt-card" aria-labelledby="prompt-title">
+        <div class="card-head">
+          <h2 class="card-title" id="prompt-title">Prompt</h2>
+          <label class="btn btn-quiet attach-btn">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5l-8.5 8.5a5 5 0 01-7-7L14 4.5a3.3 3.3 0 014.7 4.7L10.2 17.7a1.7 1.7 0 01-2.4-2.4L15.5 7.6"/></svg>
             Attach files
             <input type="file" id="file-input" multiple hidden
               accept=".txt,.md,.markdown,.csv,.json,.js,.ts,.py,.java,.go,.rb,.sh,.yaml,.yml,.xml,.html,.css,.sql,.log,.env,.ini,.cfg,.conf">
@@ -51,31 +53,44 @@
         </div>
         <label for="prompt-input" class="sr-only">Prompt to inspect</label>
         <textarea id="prompt-input" class="prompt-input" spellcheck="false" aria-describedby="form-error"
-          placeholder="Paste the prompt an employee is about to send to ChatGPT, Claude, or any AI tool…"></textarea>
+          placeholder="Paste the prompt you are about to send…"></textarea>
         <p id="form-error" class="form-error" role="alert" hidden></p>
         <div id="attachments" class="attachments"></div>
-        <div class="console-actions">
-          <button id="scan-btn" class="btn btn-primary" title="Shortcut: Ctrl/Cmd + Enter">Inspect locally</button>
-          <button id="send-btn" class="btn btn-secondary" disabled>Inspect first to send</button>
-          <button id="clear-btn" class="btn btn-ghost">Clear</button>
-        </div>
+
         <!-- Mini Project 3: optional breach check (the page's only network call). Off by default. -->
         <div class="breach-option">
-          <input type="checkbox" id="breach-check" aria-describedby="breach-privacy">
-          <label for="breach-check">Also check detected passwords against known breaches</label>
-          <p id="breach-privacy" class="breach-privacy">Uses the free <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> Pwned Passwords API. Only the first 5 characters of the password's SHA-1 hash leave this browser. The password and its full hash never do, and only counts are saved. Have I Been Pwned sees the request (and your IP address), not the password. Runs on your next Inspect. Off again next time you open the page.</p>
+          <div class="switch-row">
+            <label for="breach-check">Check passwords against known breaches</label>
+            <input type="checkbox" id="breach-check" class="switch" aria-describedby="breach-privacy">
+          </div>
+          <p id="breach-privacy" class="breach-privacy">Only a 5-character hash prefix leaves this browser.</p>
+          <details class="how">
+            <summary>How this works</summary>
+            <p>When a prompt contains a password, your browser hashes it with SHA-1 and sends only the first 5 characters of the hash to the free <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> Pwned Passwords API. The password and its full hash never leave this browser, and only counts are saved. Have I Been Pwned sees the request (and your IP address), not the password. Runs on your next Inspect. Off again next time you open the page.</p>
+          </details>
         </div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Inspection result</span><span class="local-badge">on-device</span></div>
-        <div id="scan-result" class="scan-result" aria-live="polite">
-          <div class="empty-state">Paste a prompt or attach a file to inspect it before it reaches an AI tool.</div>
+
+        <div class="console-actions">
+          <button id="scan-btn" class="btn btn-primary" title="Shortcut: Ctrl/Cmd + Enter" aria-keyshortcuts="Control+Enter Meta+Enter">Inspect</button>
+          <button id="clear-btn" class="btn btn-quiet">Clear</button>
         </div>
-        <!-- Breach-check notes go here, in their own live region, so a breach answer
-             is announced on its own without re-reading the whole result. -->
+      </section>
+
+      <section class="card result-card" aria-labelledby="result-title">
+        <div class="card-head">
+          <h2 class="card-title" id="result-title">Result</h2>
+          <span class="local-badge">On this device</span>
+        </div>
+        <div id="scan-result" class="scan-result" aria-live="polite"></div>
+        <!-- Breach-check summary, in its own live region so a breach answer is
+             announced on its own without re-reading the whole result. -->
         <div id="breach-status" role="status"></div>
-      </div>
+        <div id="result-actions" class="result-actions" hidden>
+          <button id="send-btn" class="btn btn-secondary" disabled>Inspect first to send</button>
+        </div>
+      </section>
     </div>
+    <p class="aside">Want this inside ChatGPT, Claude and Gemini? <a href="#install" id="goto-install">Get the Chrome extension</a>.</p>
   </section>
 
   <!-- POLICIES -->
@@ -200,7 +215,7 @@ Test card: 4111 1111 1111 1111</pre>
 </main>
 
 <footer class="footer">
-  <span>AI Firewall runs in your browser. Nothing you paste is uploaded; the optional breach check sends only a 5-character hash prefix.</span>
+  <span>Runs in your browser. Nothing you paste is uploaded.</span>
   <span>Breach data: <a href="https://haveibeenpwned.com/Passwords" target="_blank" rel="noopener">Have I Been Pwned</a> · Demo build, defensive use only</span>
 </footer>
 

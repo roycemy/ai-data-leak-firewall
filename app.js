@@ -87,8 +87,39 @@
     document.getElementById('attachments').appendChild(chip);
   }
 
+  // ---------- Small display helpers (severity badge, icons) ----------
+  // Severity is always colour + icon + word (DESIGN.md).
+  var SEVERITY = {
+    critical: { icon: '◆', word: 'Critical' },
+    high: { icon: '▲', word: 'High' },
+    medium: { icon: '●', word: 'Medium' },
+    low: { icon: '○', word: 'Low' }
+  };
+  function sevBadge(sev) {
+    var s = SEVERITY[sev] || SEVERITY.low;
+    return '<span class="badge badge-' + sev + '"><span aria-hidden="true">' + s.icon + '</span>' + s.word + '</span>';
+  }
+  // Line icons (24×24, stroke) used in the verdict banner and empty states.
+  var ICON_PATHS = {
+    block: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>',
+    warn: '<path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17.5v.5"/>',
+    redact: '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M8 10h8M8 14h5"/>',
+    allow: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/>',
+    shield: '<path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/>',
+    chart: '<path d="M4 19h16M7 16v-5M12 16V7M17 16v-8"/>',
+    list: '<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'
+  };
+  function icon(name) {
+    return '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON_PATHS[name] + '</svg>';
+  }
+  // An empty state: icon, short heading, one sentence.
+  function emptyState(iconName, title, text) {
+    return '<div class="empty"><span class="empty-icon">' + icon(iconName) + '</span>' +
+      '<p class="empty-title">' + title + '</p><p class="empty-text">' + text + '</p></div>';
+  }
+
   // ---------- Form feedback ----------
-  var EMPTY_RESULT = '<div class="empty-state">Paste a prompt or attach a file to inspect it before it reaches an AI tool.</div>';
+  var EMPTY_RESULT = emptyState('shield', 'Nothing inspected yet', 'Paste a prompt or attach a file, then press Inspect. Results appear here.');
   function showFormError(msg) {
     var box = document.getElementById('form-error');
     box.textContent = msg;
@@ -124,6 +155,7 @@
     var sendBtn = document.getElementById('send-btn');
     sendBtn.disabled = true;
     sendBtn.textContent = 'Inspect first to send';
+    document.getElementById('result-actions').hidden = true; // Send appears after an Inspect
   }
 
   // Called when the prompt or files change after an inspection.
@@ -131,7 +163,7 @@
     if (inspectedText === null || currentText() === inspectedText) return;
     requireInspection();
     document.getElementById('scan-result').innerHTML =
-      '<div class="empty-state">You changed the prompt after it was inspected. Press <b>Inspect locally</b> to check the new text before sending.</div>';
+      emptyState('shield', 'The prompt changed', 'You edited it after it was inspected. Press Inspect to check the new text before sending.');
   }
 
   // ---------- Scanning ----------
@@ -164,12 +196,6 @@
     return events[events.length - 1]; // the breach check adds its counts to this event
   }
 
-  function groupBy(arr, key) {
-    var out = {};
-    arr.forEach(function (x) { var k = x[key]; out[k] = out[k] || []; out[k].push(x); });
-    return out;
-  }
-
   function scanNow(sourceOverride) {
     var promptText = document.getElementById('prompt-input').value;
     var parts = [];
@@ -196,54 +222,53 @@
     return { findings: findings, action: action, combined: combined };
   }
 
+  // Verdict copy for each governing action: title, one-line explanation, Send button text.
+  var VERDICT = {
+    block: { title: 'Blocked by policy', sub: 'Remove the flagged items, or ask an admin to change the policy.', send: 'Blocked by policy' },
+    redact: { title: 'Redact before sending', sub: 'AI Firewall removed the flagged data. Send the redacted version below instead.', send: 'Send redacted version (simulated)' },
+    warn: { title: 'Review before sending', sub: 'Make sure you mean to share the items below.', send: 'I understand, send anyway (simulated)' },
+    allow: { title: 'Allowed by policy', sub: 'The findings below were logged for audit.', send: 'Send to AI (simulated)' },
+    clean: { title: 'Clear to send', sub: 'No confidential data found. The check ran on this device.', send: 'Send to AI (simulated)' }
+  };
+  var VERDICT_ICON = { block: 'block', redact: 'redact', warn: 'warn', allow: 'allow', clean: 'allow' };
+
   function renderScanResult(promptText, combined, findings, action) {
     var resultBox = document.getElementById('scan-result');
     var sendBtn = document.getElementById('send-btn');
-    if (!findings.length) {
-      resultBox.innerHTML =
-        '<div class="verdict verdict-allow"><div class="verdict-title">✓ Clear to send</div>' +
-        '<div class="verdict-sub">No confidential data detected. Nothing left this device — inspection ran locally.</div></div>';
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send to AI (simulated)';
-      sendBtn.dataset.mode = 'send';
-      return;
-    }
-    var byCat = groupBy(findings, 'category');
-    var html = '';
-    var verdictClass = { block: 'verdict-block', redact: 'verdict-redact', warn: 'verdict-warn', allow: 'verdict-allow' }[action];
-    var verdictText = {
-      block: '⛔ Blocked by policy',
-      redact: '✂ Redaction required before sending',
-      warn: '⚠ Confidential data detected — review before sending',
-      allow: '✓ Allowed by policy'
-    }[action];
-    var verdictSub = {
-      block: 'This content matches data classes your policy blocks from AI tools. Remove the flagged items or ask an admin to adjust policy.',
-      redact: 'AI Firewall removed the flagged data below. Send the redacted version instead.',
-      warn: 'This content includes data your policy flags. Confirm you intend to share it.',
-      allow: 'Findings logged for audit.'
-    }[action];
-    html += '<div class="verdict ' + verdictClass + '"><div class="verdict-title">' + verdictText + '</div>' +
-      '<div class="verdict-sub">' + verdictSub + '</div></div>';
-    html += '<div class="findings">';
-    Object.keys(D.CATEGORIES).forEach(function (cat) {
-      var list = byCat[cat];
-      if (!list) return;
-      html += '<div class="finding-group"><div class="finding-cat"><span class="cat-dot cat-' + cat + '"></span>' +
-        D.CATEGORIES[cat].label + ' <span class="count">' + list.length + '</span>' +
-        '<span class="policy-tag policy-' + (policies[cat] || 'warn') + '">' + ACTION_LABEL[policies[cat] || 'warn'] + '</span></div>';
-      list.forEach(function (f) {
-        html += '<div class="finding sev-' + f.severity + '" id="finding-' + findings.indexOf(f) + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
-          '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code></div>';
+    var key = findings.length ? action : 'clean';
+    var v = VERDICT[key];
+
+    // 1. One verdict banner. For block, redact and warn it names the data
+    //    classes whose policy decided it, e.g. "Secrets & Credentials: Block."
+    var deciding = Object.keys(D.CATEGORIES).filter(function (c) {
+      return policies[c] === action && findings.some(function (f) { return f.category === c; });
+    }).map(function (c) { return D.CATEGORIES[c].label; });
+    var because = (key === 'block' || key === 'redact' || key === 'warn') && deciding.length
+      ? deciding.join(', ') + ': ' + ACTION_LABEL[action] + '. ' : '';
+    var html = '<div class="verdict verdict-' + key + '">' + icon(VERDICT_ICON[key]) +
+      '<div><p class="verdict-title">' + v.title + '</p><p class="verdict-sub">' + because + v.sub + '</p></div></div>';
+
+    // 2. One row per finding, most severe first. Each row keeps its index in
+    //    `findings` as id="finding-N" so the breach check can update that row.
+    if (findings.length) {
+      var order = findings.map(function (f, i) { return i; }).sort(function (a, b) {
+        return severityRank(findings[b].severity) - severityRank(findings[a].severity);
       });
-      html += '</div>';
-    });
-    html += '</div>';
-    if (action === 'redact') {
-      var redacted = D.redact(combined, findings);
-      html += '<div class="redacted-box"><div class="redacted-head">Redacted version — safe to send</div>' +
-        '<pre class="redacted-text">' + escapeHTML(redacted) + '</pre>' +
-        '<button class="btn btn-secondary" id="copy-redacted">Copy redacted text</button></div>';
+      html += '<p class="caption findings-caption">' + plural(findings.length, 'finding') + '</p><ul class="finding-list">';
+      order.forEach(function (i) {
+        var f = findings[i];
+        html += '<li class="finding" id="finding-' + i + '">' + sevBadge(f.severity) +
+          '<div class="finding-main"><p class="finding-label">' + f.label + '</p>' +
+          '<p class="finding-meta">' + D.CATEGORIES[f.category].label + ' · <code class="masked">' + escapeHTML(f.masked) + '</code></p></div></li>';
+      });
+      html += '</ul>';
+    }
+
+    // 3. The redacted copy, only when the policy says Redact.
+    if (key === 'redact') {
+      html += '<div class="redacted-box"><div class="redacted-head"><span class="caption">Redacted version</span>' +
+        '<button class="btn btn-quiet" id="copy-redacted">Copy</button></div>' +
+        '<pre class="redacted-text">' + escapeHTML(D.redact(combined, findings)) + '</pre></div>';
     }
     resultBox.innerHTML = html;
     var copyBtn = document.getElementById('copy-redacted');
@@ -254,54 +279,57 @@
         copyBtn.textContent = 'Copied ✓';
       });
     }
-    if (action === 'block') {
-      sendBtn.disabled = true;
-      sendBtn.textContent = 'Blocked by policy';
-    } else if (action === 'redact') {
-      sendBtn.disabled = false;
-      sendBtn.textContent = 'Send redacted version (simulated)';
-      sendBtn.dataset.mode = 'redacted';
-      sendBtn.dataset.payload = D.redact(combined, findings);
-    } else {
-      sendBtn.disabled = false;
-      sendBtn.textContent = action === 'warn' ? 'I understand — send anyway (simulated)' : 'Send to AI (simulated)';
-      sendBtn.dataset.mode = 'send';
-    }
+
+    // 4. The Send button matches the verdict (Block keeps it disabled).
+    document.getElementById('result-actions').hidden = false;
+    sendBtn.textContent = v.send;
+    sendBtn.disabled = key === 'block';
+    sendBtn.dataset.mode = key === 'redact' ? 'redacted' : 'send';
+    if (key === 'redact') sendBtn.dataset.payload = D.redact(combined, findings);
   }
 
   // ---------- Breach check (Mini Project 3) ----------
   var breachBox = document.getElementById('breach-check');
-  // Unticking the box removes any breach-check note, including a "Checking…"
-  // that would otherwise stay on screen (its answer is ignored once unticked).
+  // Unticking the box removes the breach lines and summary, including a
+  // "Checking…" that would otherwise stay on screen (its answer is ignored).
   breachBox.addEventListener('change', function () {
     if (!breachBox.checked) clearBreachNote();
   });
 
-  // Show one note in #breach-status, under the result. kind: muted | loading | error | bad | good
+  // The one-line summary under the findings. It is also what screen readers
+  // announce (#breach-status is role="status"). kind: muted | loading | error | bad | good
   function showBreachNote(kind, html) {
     document.getElementById('breach-status').innerHTML =
-      '<div id="breach-note" class="breach-note breach-' + kind + '"' +
-      (kind === 'loading' ? ' aria-busy="true"' : '') + '>' + html + '</div>';
+      '<p id="breach-note" class="breach-note breach-' + kind + '"' +
+      (kind === 'loading' ? ' aria-busy="true"' : '') + '>' + html + '</p>';
   }
-  function clearBreachNote() { document.getElementById('breach-status').innerHTML = ''; }
+  function clearBreachNote() {
+    document.getElementById('breach-status').innerHTML = '';
+    document.querySelectorAll('.finding-breach').forEach(function (line) { line.remove(); });
+  }
 
-  // Mark one finding row as found in breaches, in place. Redrawing the whole
-  // result would make screen readers read the verdict again.
-  function markFoundInBreaches(findingIndex) {
+  // Put the breach result inside one password's finding row, in place (no
+  // redraw, so screen readers do not read the verdict again). kind: loading | bad | good | error
+  function setRowBreach(findingIndex, kind, html) {
     var row = document.getElementById('finding-' + findingIndex);
     if (!row) return;
-    row.className = 'finding sev-critical';
-    row.querySelector('.sev').textContent = 'CRITICAL';
-    row.insertAdjacentHTML('beforeend', '<span class="breach-tag">Found in breaches</span>');
+    var line = row.querySelector('.finding-breach');
+    if (!line) {
+      line = document.createElement('p');
+      row.querySelector('.finding-main').appendChild(line);
+    }
+    line.className = 'finding-breach breach-' + kind;
+    line.innerHTML = html;
+    if (kind === 'bad') row.querySelector('.badge').outerHTML = sevBadge('critical'); // raised to Critical
   }
 
-  // Every breach result says what left the browser (the panel's badge says "on-device").
+  // Every breach summary says what left the browser (the card's badge says "On this device").
   var SENT_NOTE = '<span class="muted"> Sent: a 5-character hash prefix only.</span>';
 
   function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
 
   // Reads: breachBox, breachRunId. Changes: the findings' severity, the event's
-  // counts (breachChecked, breached, breachError) and the result panel.
+  // counts (breachRan, breachChecked, breached, breachError) and the result card.
   async function runBreachCheck(combined, findings, event) {
     var myRun = ++breachRunId;
     clearBreachNote();                                    // drop the note from the last Inspect
@@ -310,9 +338,10 @@
     var found = B.passwordsFrom(combined, findings);
     if (!found.length) {
       event.breachRan = true; event.breachChecked = 0; saveEvents(); // log: "no password", not "off"
-      showBreachNote('muted', 'No passwords found, so nothing was sent to Have I Been Pwned.');
+      showBreachNote('muted', 'Breach check: no passwords found, so nothing was sent to Have I Been Pwned.');
       return;
     }
+    found.forEach(function (p) { setRowBreach(p.findingIndex, 'loading', 'Checking known breaches…'); });
     showBreachNote('loading', 'Checking ' + plural(found.length, 'password') + ' against known breaches…');
 
     var outcome = await B.checkAll(found);                // every fetch is inside try/catch there
@@ -321,6 +350,7 @@
 
     if (outcome.error) {
       event.breachError = true; saveEvents();
+      found.forEach(function (p) { setRowBreach(p.findingIndex, 'error', '▲ Breach check unavailable'); });
       showBreachNote('error', '⚠ <b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
         '. The local scan above still applies.' +
         '<span class="muted"> Sent at most: a 5-character hash prefix.</span>');
@@ -328,11 +358,14 @@
     }
 
     // Worked-out result: a password seen in breaches becomes a critical finding,
-    // and its row on screen is updated in place.
+    // and its row on screen says how many times it was seen.
     outcome.results.forEach(function (r) {
       if (r.count > 0) {
         findings[r.findingIndex].severity = 'critical';
-        markFoundInBreaches(r.findingIndex);
+        setRowBreach(r.findingIndex, 'bad', '<span class="badge badge-solid-critical">Found in breaches</span>' +
+          '<span>Seen <b class="num">' + r.count.toLocaleString() + '</b> times. Change this password everywhere it is used.</span>');
+      } else {
+        setRowBreach(r.findingIndex, 'good', '✓ Not found in known breaches');
       }
     });
     // Save counts only: never the password, the hash or the prefix.
@@ -342,14 +375,8 @@
     saveEvents();
 
     if (outcome.breached) {
-      var items = outcome.results.filter(function (r) { return r.count > 0; }).map(function (r) {
-        // Show only the last 3 characters of the masked finding (trailing full stop removed).
-        var ending = findings[r.findingIndex].masked.replace(/[.!?,;]+$/, '').slice(-3);
-        return '<li>Password ending <code class="masked">' + escapeHTML(ending) + '</code> seen <b>' +
-          r.count.toLocaleString() + '</b> times</li>';
-      }).join('');
-      showBreachNote('bad', '⛔ <b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
-        ' found in known breaches.</b> Attackers try these first. Change it everywhere it is used.' + SENT_NOTE + '<ul>' + items + '</ul>');
+      showBreachNote('bad', '<b>' + outcome.breached + ' of ' + plural(outcome.checked, 'password') +
+        ' found in known breaches.</b>' + SENT_NOTE);
     } else {
       showBreachNote('good', '✓ <b>Not found in known breaches</b> (' + plural(outcome.checked, 'password') +
         ' checked). That does not make it safe to paste into an AI tool.' + SENT_NOTE);
@@ -372,7 +399,7 @@
       showFormError('The prompt changed since it was inspected. Inspect it again before sending.');
       return;
     }
-    btn.textContent = '✓ Sent (simulated) — no data left this device';
+    btn.textContent = '✓ Sent (simulated). Nothing left this device';
     logEvent('simulated-send', [], 'sent-' + (btn.dataset.mode || 'send'));
     setTimeout(function () { scanNow(); }, 1600);
   });
@@ -574,6 +601,7 @@
   policiesLink.addEventListener('click', function (e) { e.preventDefault(); showView('policies'); });
 
   // ---------- Boot ----------
+  document.getElementById('scan-result').innerHTML = EMPTY_RESULT;
   renderPolicies();
   var initial = (location.hash || '#firewall').slice(1);
   showView(views.indexOf(initial) !== -1 ? initial : 'install');
