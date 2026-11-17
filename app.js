@@ -407,9 +407,11 @@
       showFormError('The prompt changed since it was inspected. Inspect it again before sending.');
       return;
     }
+    // Log the send only. It does not inspect again, so one inspection plus one
+    // send is one inspection in the log. Inspect again to send again.
     btn.textContent = '✓ Sent (simulated). Nothing left this device';
+    btn.disabled = true;
     logEvent('simulated-send', [], 'sent-' + (btn.dataset.mode || 'send'));
-    setTimeout(function () { scanNow(); }, 1600);
   });
   function clearConsole() {
     document.getElementById('prompt-input').value = '';
