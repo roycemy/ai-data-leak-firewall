@@ -96,12 +96,14 @@
   <!-- POLICIES -->
   <section id="view-policies" class="view">
     <div class="view-head">
-      <h1>Policy controls</h1>
-      <p class="lede">Decide what happens per data class. <b>Warn</b> educates in the moment, <b>Redact</b> strips the data and keeps the workflow, <b>Block</b> stops the send entirely.</p>
+      <div>
+        <h1>Policies</h1>
+        <p class="lede">Choose what happens to each kind of data. <b>Warn</b> shows the risk, <b>Redact</b> masks it and lets the prompt through, <b>Block</b> stops the send.</p>
+      </div>
     </div>
     <div class="panel"><div id="policy-list"></div></div>
     <div class="reset-row">
-      <button id="reset-all" class="btn btn-ghost danger">Reset everything</button>
+      <button id="reset-all" class="btn btn-secondary danger">Reset everything</button>
       <span class="reset-note">Restores default policies, clears the audit log and the prompt box.</span>
     </div>
   </section>
@@ -230,8 +232,10 @@ Test card: 4111 1111 1111 1111</pre>
   <!-- ASSESSMENT -->
   <section id="view-assessment" class="view">
     <div class="view-head">
-      <h1>Prove the risk — safely.</h1>
-      <p class="lede">A guided, authorized simulation with fabricated data. Show any company what employees leak into AI tools, without touching anything real.</p>
+      <div>
+        <h1>Assessment</h1>
+        <p class="lede">A guided simulation with made-up data. Show a company what its staff could leak into AI tools, without touching anything real.</p>
+      </div>
     </div>
     <div class="progress"><div id="assess-progress-fill" class="progress-fill"></div></div>
     <div id="assessment-stage"></div>
