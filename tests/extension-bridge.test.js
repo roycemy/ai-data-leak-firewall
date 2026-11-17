@@ -68,18 +68,43 @@ test('stoppedToday and stoppedWeek count every cancelled prompt, not just the 40
   assert.strictEqual(m.stoppedWeek, 2);
 });
 
-test('validate requires stoppedToday and stoppedWeek to be whole numbers', () => {
+test('validate treats a missing stoppedToday or stoppedWeek as 0, and still rejects invalid values', () => {
   const good = Bridge.message(EVENTS, NOW);
-  assert.strictEqual(Link.validate(good).summary.stoppedToday, Bridge.summarize(EVENTS, NOW).stoppedToday);
+  const valid = Link.validate(good);
+  assert.ok(valid);
+  assert.strictEqual(valid.summary.stoppedToday, Bridge.summarize(EVENTS, NOW).stoppedToday);
+  assert.strictEqual(valid.summary.stoppedWeek, Bridge.summarize(EVENTS, NOW).stoppedWeek);
+
+  const noToday = JSON.parse(JSON.stringify(good));
+  delete noToday.summary.stoppedToday;
+  const gotToday = Link.validate(noToday);
+  assert.ok(gotToday, 'an older extension that omits stoppedToday still connects');
+  assert.strictEqual(gotToday.summary.stoppedToday, 0);
+  assert.strictEqual(gotToday.summary.stoppedWeek, good.summary.stoppedWeek);
+
+  const noWeek = JSON.parse(JSON.stringify(good));
+  noWeek.summary.stoppedToday = 0;
+  delete noWeek.summary.stoppedWeek;
+  const gotWeek = Link.validate(noWeek);
+  assert.ok(gotWeek, 'an omitted stoppedWeek is treated as 0');
+  assert.strictEqual(gotWeek.summary.stoppedToday, 0);
+  assert.strictEqual(gotWeek.summary.stoppedWeek, 0);
+
+  const neither = JSON.parse(JSON.stringify(good));
+  delete neither.summary.stoppedToday;
+  delete neither.summary.stoppedWeek;
+  const gotNeither = Link.validate(neither);
+  assert.ok(gotNeither, '1.2.0 / older 1.3.0 messages without either field still connect');
+  assert.strictEqual(gotNeither.summary.stoppedToday, 0);
+  assert.strictEqual(gotNeither.summary.stoppedWeek, 0);
+
   const bad = [
     Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: 1.5 }) }),
     Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedWeek: -1 }) }),
     Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: '2' }) }),
     Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: 3, stoppedWeek: 1 }) }),
+    Object.assign({}, good, { summary: Object.assign({}, good.summary, { stoppedToday: null }) }),
   ];
-  const missing = JSON.parse(JSON.stringify(good));
-  delete missing.summary.stoppedToday;
-  bad.push(missing);
   bad.forEach((m, i) => assert.strictEqual(Link.validate(m), null, 'case ' + i));
 });
 
