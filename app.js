@@ -583,7 +583,7 @@
     setStat('stat-flagged', s.flagged + extFlagged, EXT.statCaption(empty ? 'With confidential data' : Math.round(s.flagged / s.inspections * 100) + '% of inspections', extFlagged));
     setStat('stat-blocked', s.blocked + extBlocked, EXT.statCaption('Stopped before sending', extBlocked));
     setStat('stat-breached', s.breachedInspections, 'Inspections with a breached password');
-    document.getElementById('view-dashboard').classList.toggle('is-empty', empty);
+    document.getElementById('view-dashboard').classList.toggle('is-empty', empty && !extFlagged);
     document.getElementById('dash-empty').hidden = !empty;
     document.getElementById('dash-content').hidden = empty;
     var line = document.getElementById('status-line');
