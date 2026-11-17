@@ -293,9 +293,19 @@ code { font-family: var(--mono); font-size: 0.9em; background: var(--panel-2); p
   .console-actions { flex-wrap: wrap; }
   .panel { padding: 16px; }
   .bar-label { width: 120px; }
-  /* Audit log on a phone: hide the Source column so Action and Breach check fit */
-  .log-table th:nth-child(2), .log-table td:nth-child(2) { display: none; }
-  .log-table td.mono { white-space: nowrap; font-size: 12px; }
+  /* Audit log on a phone: hide Source and Findings (the severity tag still shows
+     whether anything was found) and tighten the cells so Action and Breach check fit */
+  .log-table th:nth-child(2), .log-table td:nth-child(2),
+  .log-table th:nth-child(3), .log-table td:nth-child(3) { display: none; }
+  .log-table th, .log-table td { padding: 8px 6px; }
+  .log-table td.mono { font-size: 12px; }
+  /* If a long action (e.g. a policy change) still overflows, a soft shadow on the
+     right edge hints that the table scrolls sideways */
+  .table-scroll {
+    background:
+      linear-gradient(var(--panel), var(--panel)) right / 16px 100% no-repeat local,              /* covers the shadow at the end of the table */
+      linear-gradient(to left, rgba(0, 0, 0, 0.14), transparent) right / 12px 100% no-repeat scroll; /* the shadow, fixed to the right edge */
+  }
 }
 
 /* ---- Keyboard access: visible focus, skip link, reduced motion ---- */

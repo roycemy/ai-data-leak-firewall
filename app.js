@@ -446,7 +446,7 @@
     var html = '<div class="table-scroll"><table class="log-table"><thead><tr><th>Time</th><th>Source</th><th>Findings</th><th>Worst severity</th><th>Action</th><th>Breach check</th></tr></thead><tbody>';
     list.forEach(function (e) {
       var d = new Date(e.ts);
-      html += '<tr><td class="mono">' + d.toLocaleString() + '</td><td>' + escapeHTML(e.source) + '</td>' +
+      html += '<tr><td class="mono">' + d.toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'medium' }) + '</td><td>' + escapeHTML(e.source) + '</td>' +
         '<td>' + (e.total || '—') + '</td><td><span class="sev sev-' + e.topSeverity + '">' + (e.total ? e.topSeverity.toUpperCase() : '—') + '</span></td>' +
         '<td><span class="action-tag action-' + String(e.action).replace(/[^a-z-]/g, '') + '">' + escapeHTML(e.action) + '</span></td>' +
         '<td>' + breachCell(e) + '</td></tr>';
