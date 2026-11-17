@@ -91,7 +91,7 @@
         if (response.status === 429) {
           return { ok: false, error: 'too many checks, wait a few seconds and try again' };
         }
-        return { ok: false, error: 'Have I Been Pwned answered with status ' + response.status };
+        return { ok: false, error: 'Have I Been Pwned is busy or unavailable right now (status ' + response.status + '). Try Inspect again in a minute' };
       }
 
       var body = await response.text();          // the "SUFFIX:COUNT" lines

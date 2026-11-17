@@ -77,7 +77,7 @@ test('checkPassword treats a non-OK status as an error, not a result', () =>
   withFetch(async () => ({ ok: false, status: 503, text: async () => '' }), async () => {
     const r = await B.checkPassword(WORD);
     assert.strictEqual(r.ok, false);
-    assert.match(r.error, /503/);
+    assert.match(r.error, /busy or unavailable right now \(status 503\)/);
   }));
 
 test('checkPassword explains a 429 rate limit in plain words', () =>

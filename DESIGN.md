@@ -30,7 +30,7 @@ One column of content under a top bar. The console is two panels (input, result)
 - **Breach check, loading:** a quiet `--panel-2` note with a small spinner (no spinner when reduced motion is on) and "Checking…".
 - **Breach check, found in breaches:** red note (`--red` on its tint) with ⛔ and the count in bold; the password's finding row shows CRITICAL and a red "Found in breaches" tag.
 - **Breach check, not found:** green note with ✓ "Not found in known breaches", plus a reminder that this is not proof the password is strong.
-- **Breach check, error or nothing to check:** amber note (error) or muted note (nothing to check). Always says the local scan still applies.
+- **Breach check, error or nothing to check:** amber note with ⚠ (error) or muted note (nothing to check). Always says the local scan still applies.
 - **After reset:** identical to the empty state.
 - **Edited after inspecting:** the result panel shows the muted empty-state sentence asking for a new inspection, and the Send button is disabled (dimmed) and reads "Inspect first to send".
 

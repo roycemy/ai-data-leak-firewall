@@ -315,7 +315,7 @@
 
     if (outcome.error) {
       event.breachError = true; saveEvents();
-      showBreachNote('error', '<b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
+      showBreachNote('error', '⚠ <b>Breach check unavailable:</b> ' + escapeHTML(outcome.error) +
         '. The local scan above still applies.' +
         '<span class="muted"> Sent at most: a 5-character hash prefix.</span>');
       return;
