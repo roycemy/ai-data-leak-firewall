@@ -70,7 +70,7 @@
   function cardHTML(s, timeAgoText) {
     if (!s) {
       return '<p class="card-caption">No extension connected to this page. Flags caught in ChatGPT, Claude or Gemini are kept by the extension in Chrome: open its toolbar popup and choose <b>View flagged activity</b>. With the latest extension installed (and reloaded in <code>chrome://extensions</code>), its counts also appear here.</p>' +
-        '<p><a href="#install" class="link-quiet" data-goto="install">Get the extension</a></p>';
+        '<p class="section-gap"><a href="#install" class="btn btn-secondary" data-goto="install">Get the extension</a></p>';
     }
     if (!s.total) {
       return '<p class="card-caption">Connected. Nothing flagged in ChatGPT, Claude or Gemini yet.</p>';

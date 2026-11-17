@@ -551,6 +551,7 @@
   // (extension/bridge.js). Counts and labels only, kept in memory, never saved.
   var EXT = window.DatoExtensionLink;
   var extSummary = null;
+  var SHIELD_ICON = '<svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>';
   // Changes: extSummary, then redraws the Dashboard.
   window.addEventListener('message', function (e) {
     if (!EXT.isFromExtension(e, window)) return;
@@ -565,8 +566,9 @@
   // Reads: extSummary. Changes: the extension card only.
   function renderExtensionCard() {
     var badge = document.getElementById('ext-status');
-    badge.className = 'badge ' + (extSummary ? 'badge-ok' : 'badge-low');
-    badge.innerHTML = '<span class="dot"></span>' + (extSummary ? 'Connected' : 'Not connected');
+    // Connected uses the cobalt brand badge with the shield mark (cobalt never means "safe").
+    badge.className = 'badge ' + (extSummary ? 'badge-info' : 'badge-low');
+    badge.innerHTML = (extSummary ? SHIELD_ICON : '<span class="dot"></span>') + (extSummary ? 'Connected' : 'Not connected');
     var ago = extSummary && extSummary.lastAt ? DB.timeAgo(extSummary.lastAt, Date.now()) : '';
     document.getElementById('ext-body').innerHTML = EXT.cardHTML(extSummary, ago);
   }
