@@ -194,6 +194,7 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 }
 .local-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; line-height: 16px; font-weight: 600; color: var(--ok); background: var(--ok-tint); padding: 2px 8px; border-radius: 999px; }
 .posture-note { color: var(--text-2); font-size: 14px; line-height: 20px; margin-top: 16px; }
+.posture-note:first-of-type { margin-top: 0; }
 
 /* ---- Firewall ---- */
 .console-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }

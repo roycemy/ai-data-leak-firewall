@@ -101,7 +101,7 @@
         <p class="lede">Choose what happens to each kind of data. <b>Warn</b> shows the risk, <b>Redact</b> masks it and lets the prompt through, <b>Block</b> stops the send.</p>
       </div>
     </div>
-    <div class="panel"><div id="policy-list"></div></div>
+    <div class="card"><div id="policy-list"></div></div>
     <div class="reset-row">
       <button id="reset-all" class="btn btn-secondary danger">Reset everything</button>
       <span class="reset-note">Restores default policies, clears the audit log and the prompt box.</span>
@@ -201,12 +201,14 @@
   <!-- INSTALL -->
   <section id="view-install" class="view">
     <div class="view-head">
-      <h1>Put AI Firewall in front of every AI tool.</h1>
-      <p class="lede">The Chrome extension runs the same checks right inside ChatGPT, Claude, and Gemini, and stops the prompt before it sends. Everything stays on the computer. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
+      <div>
+        <h1>Chrome extension</h1>
+        <p class="lede">Runs the same checks inside ChatGPT, Claude and Gemini, before the prompt sends. Nothing is uploaded. To try the checks without installing anything, use the <a href="#firewall" id="goto-firewall">Firewall</a> tab.</p>
+      </div>
     </div>
     <div class="install-grid">
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Install in Chrome</span><span class="local-badge">free · local only</span></div>
+      <section class="card" aria-labelledby="install-title">
+        <div class="card-head"><h2 class="card-title" id="install-title">Install in Chrome</h2><span class="local-badge">Free</span></div>
         <p><a class="btn btn-primary" href="dato-extension.zip" download>Download the Chrome extension</a></p>
         <ol class="install-steps">
           <li>Unzip <code>dato-extension.zip</code>. You get a folder called <code>extension</code>.</li>
@@ -216,16 +218,16 @@
           <li>Pin it from the Extensions menu (the extension still uses its earlier name, Dato), then open ChatGPT, Claude, or Gemini and look for <b>Dato · Protected locally</b>.</li>
         </ol>
         <p class="posture-note">Keep the folder on your computer. Chrome runs the extension from it.</p>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span class="panel-title">Quick test</span></div>
+      </section>
+      <section class="card" aria-labelledby="quick-title">
+        <div class="card-head"><h2 class="card-title" id="quick-title">Quick test</h2></div>
         <p class="posture-note">Paste this fake example into ChatGPT, Claude, or Gemini. The extension should stop it before it sends.</p>
         <pre class="install-sample">Summarize this fake deployment note:
 AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
 Customer email: dana@example.com
 Test card: 4111 1111 1111 1111</pre>
         <p class="posture-note">These are public test values, not real credentials. The extension keeps its own policies in Chrome. It does not send anything to this dashboard.</p>
-      </div>
+      </section>
     </div>
   </section>
 
