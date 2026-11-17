@@ -292,6 +292,9 @@ code { font-family: var(--mono); font-size: 0.9em; background: var(--panel-2); p
   .console-actions { flex-wrap: wrap; }
   .panel { padding: 16px; }
   .bar-label { width: 120px; }
+  /* Audit log on a phone: hide the Source column so Action and Breach check fit */
+  .log-table th:nth-child(2), .log-table td:nth-child(2) { display: none; }
+  .log-table td.mono { white-space: nowrap; font-size: 12px; }
 }
 
 /* ---- Keyboard access: visible focus, skip link, reduced motion ---- */
