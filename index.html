@@ -76,6 +76,9 @@
         <div id="scan-result" class="scan-result" aria-live="polite">
           <div class="empty-state">Paste a prompt or attach a file to inspect it before it reaches an AI tool.</div>
         </div>
+        <!-- Breach-check notes go here, in their own live region, so a breach answer
+             is announced on its own without re-reading the whole result. -->
+        <div id="breach-status" role="status"></div>
       </div>
     </div>
   </section>

@@ -120,6 +120,7 @@
   function requireInspection() {
     inspectedText = null;
     breachRunId++; // any breach check still running is for old text: ignore its answer
+    clearBreachNote();
     var sendBtn = document.getElementById('send-btn');
     sendBtn.disabled = true;
     sendBtn.textContent = 'Inspect first to send';
@@ -191,7 +192,7 @@
     var source = sourceOverride || parts.map(function (p) { return p.name; }).join(', ');
     var event = logEvent(source, findings, findings.length ? action : 'allowed-clean');
     renderScanResult(promptText, combined, findings, action);
-    runBreachCheck(promptText, combined, findings, action, event); // async; only if the box is ticked
+    runBreachCheck(combined, findings, event); // async; only if the box is ticked
     return { findings: findings, action: action, combined: combined };
   }
 
@@ -232,9 +233,8 @@
         D.CATEGORIES[cat].label + ' <span class="count">' + list.length + '</span>' +
         '<span class="policy-tag policy-' + (policies[cat] || 'warn') + '">' + ACTION_LABEL[policies[cat] || 'warn'] + '</span></div>';
       list.forEach(function (f) {
-        html += '<div class="finding sev-' + f.severity + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
-          '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code>' +
-          (f.breachCount ? '<span class="breach-tag">Found in breaches</span>' : '') + '</div>';
+        html += '<div class="finding sev-' + f.severity + '" id="finding-' + findings.indexOf(f) + '"><span class="sev">' + f.severity.toUpperCase() + '</span>' +
+          '<span class="finding-label">' + f.label + '</span><code class="masked">' + escapeHTML(f.masked) + '</code></div>';
       });
       html += '</div>';
     });
@@ -274,20 +274,25 @@
   // Unticking the box removes any breach-check note, including a "Checking…"
   // that would otherwise stay on screen (its answer is ignored once unticked).
   breachBox.addEventListener('change', function () {
-    var note = document.getElementById('breach-note');
-    if (!breachBox.checked && note) note.remove();
+    if (!breachBox.checked) clearBreachNote();
   });
 
-  // Show one note under the inspection result. kind: muted | loading | error | bad | good
+  // Show one note in #breach-status, under the result. kind: muted | loading | error | bad | good
   function showBreachNote(kind, html) {
-    var note = document.createElement('div');
-    note.id = 'breach-note';
-    note.className = 'breach-note breach-' + kind;
-    if (kind === 'loading') note.setAttribute('aria-busy', 'true');
-    note.innerHTML = html;
-    var old = document.getElementById('breach-note');
-    if (old) old.replaceWith(note);
-    else document.getElementById('scan-result').appendChild(note);
+    document.getElementById('breach-status').innerHTML =
+      '<div id="breach-note" class="breach-note breach-' + kind + '"' +
+      (kind === 'loading' ? ' aria-busy="true"' : '') + '>' + html + '</div>';
+  }
+  function clearBreachNote() { document.getElementById('breach-status').innerHTML = ''; }
+
+  // Mark one finding row as found in breaches, in place. Redrawing the whole
+  // result would make screen readers read the verdict again.
+  function markFoundInBreaches(findingIndex) {
+    var row = document.getElementById('finding-' + findingIndex);
+    if (!row) return;
+    row.className = 'finding sev-critical';
+    row.querySelector('.sev').textContent = 'CRITICAL';
+    row.insertAdjacentHTML('beforeend', '<span class="breach-tag">Found in breaches</span>');
   }
 
   // Every breach result says what left the browser (the panel's badge says "on-device").
@@ -297,8 +302,9 @@
 
   // Reads: breachBox, breachRunId. Changes: the findings' severity, the event's
   // counts (breachChecked, breached, breachError) and the result panel.
-  async function runBreachCheck(promptText, combined, findings, action, event) {
+  async function runBreachCheck(combined, findings, event) {
     var myRun = ++breachRunId;
+    clearBreachNote();                                    // drop the note from the last Inspect
     if (!breachBox.checked) return;                       // off by default: no network call
 
     var found = B.passwordsFrom(combined, findings);
@@ -321,11 +327,12 @@
       return;
     }
 
-    // Worked-out result: a password seen in breaches becomes a critical finding.
+    // Worked-out result: a password seen in breaches becomes a critical finding,
+    // and its row on screen is updated in place.
     outcome.results.forEach(function (r) {
       if (r.count > 0) {
         findings[r.findingIndex].severity = 'critical';
-        findings[r.findingIndex].breachCount = r.count;
+        markFoundInBreaches(r.findingIndex);
       }
     });
     // Save counts only: never the password, the hash or the prefix.
@@ -334,7 +341,6 @@
     if (outcome.breached) event.topSeverity = 'critical';
     saveEvents();
 
-    renderScanResult(promptText, combined, findings, action); // redraw with CRITICAL + tag
     if (outcome.breached) {
       var items = outcome.results.filter(function (r) { return r.count > 0; }).map(function (r) {
         return '<li>' + escapeHTML(findings[r.findingIndex].masked) + ': seen <b>' +

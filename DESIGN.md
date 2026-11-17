@@ -38,4 +38,4 @@ One column of content under a top bar. The console is two panels (input, result)
 200ms fades and colour changes only. `prefers-reduced-motion` turns all of it off.
 
 ## Accessibility
-Real `label` for the prompt box (visually hidden), `role="alert"` on errors, `aria-live` on the result, visible focus (a 2px cobalt ring on every control, kept inside segmented buttons), a skip-to-tool link, `aria-current` on the open tab, `aria-pressed` on policy buttons, text never relies on colour alone (verdicts carry words and icons). Text and background pairs keep at least 4.5:1 contrast.
+Real `label` for the prompt box (visually hidden), `role="alert"` on errors, `aria-live` on the result, breach-check notes in their own `role="status"` region (`#breach-status`) so a breach answer is announced without re-reading the verdict, visible focus (a 2px cobalt ring on every control, kept inside segmented buttons), a skip-to-tool link, `aria-current` on the open tab, `aria-pressed` on policy buttons, text never relies on colour alone (verdicts carry words and icons). Text and background pairs keep at least 4.5:1 contrast.
