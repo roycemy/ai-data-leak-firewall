@@ -199,8 +199,8 @@ kbd { font-family: inherit; font-size: 12px; line-height: 16px; padding: 0 4px; 
 /* ---- Firewall ---- */
 .console-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .result-card { display: flex; flex-direction: column; }
-.result-card .scan-result { flex: 1; display: flex; flex-direction: column; }
-.result-card .scan-result > .empty { margin: auto 0; }
+/* The empty state is centred in the full-height card; a result sits at the top. */
+.result-card .scan-result:has(> .empty) { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 #result-actions { margin-top: auto; }
 .prompt-input {
   display: block; width: 100%; min-height: 200px; resize: vertical;
