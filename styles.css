@@ -187,8 +187,9 @@ a { color: var(--cobalt); }
 
 /* Dashboard */
 .stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 18px; }
-@media (max-width: 1000px) { .stat-grid { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 800px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+/* 5 cards in 2 columns: the last one spans the full row instead of sitting alone */
+@media (max-width: 800px) { .stat-grid > :last-child { grid-column: 1 / -1; } }
 .stat-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
 .stat-num { font-size: 30px; font-weight: 750; letter-spacing: -0.02em; }
 .stat-label { color: var(--muted); font-size: 13px; margin-top: 2px; }
