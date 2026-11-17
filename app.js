@@ -300,7 +300,8 @@
     showBreachNote('loading', 'Checking ' + plural(found.length, 'password') + ' against known breaches…');
 
     var outcome = await B.checkAll(found);                // every fetch is inside try/catch there
-    if (myRun !== breachRunId) return;                    // the text changed while we waited
+    // Ignore the answer if the text changed or the box was unticked while we waited.
+    if (myRun !== breachRunId || !breachBox.checked) return;
 
     if (outcome.error) {
       event.breachError = true; saveEvents();
